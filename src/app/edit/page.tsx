@@ -377,7 +377,8 @@ export default function EditPage() {
                       onKeyDown={(e) => {
                         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                           e.preventDefault();
-                          if (uploadedImage && selectedTool !== 'none' && !isProcessing) {
+                          const canEdit = uploadedImage && selectedTool !== 'none' && !isProcessing;
+                          if (canEdit) {
                             handleEdit();
                           }
                         }
