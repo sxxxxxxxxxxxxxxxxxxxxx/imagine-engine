@@ -1,6 +1,6 @@
-# 🎨 创想引擎 (Imagine Engine) v0.5
+# 🎨 创想引擎 (Imagine Engine)
 
-极致简洁、即开即用的AI图片创作工具，专注于文生图和图片编辑功能。
+一个功能强大的 AI 图片创作平台，支持文生图、图片编辑、多图融合等多种创作功能。
 
 ## ✨ 核心功能
 
@@ -39,13 +39,13 @@
 npm install
 ```
 
-### 配置环境变量
-在 `.env.local` 文件中配置您的API密钥：
+### 配置环境变量（可选）
+复制 `.env.example` 文件为 `.env.local`，然后配置您的 API 密钥：
 ```bash
-# AI API Configuration
-NANO_BANANA_API_KEY=your_api_key_here
-NANO_BANANA_BASE_URL=https://newapi.aicohere.org/v1/chat/completions
+cp .env.example .env.local
 ```
+
+**注意**：API 配置现在可以直接在应用内的"设置"页面中配置，无需手动编辑环境变量文件。环境变量仅用于聊天功能的后端 API。
 
 ### 启动开发服务器
 ```bash
@@ -143,6 +143,42 @@ npm run dev
 ## 🔗 API服务
 
 本项目使用OpenAI兼容的API格式，支持多种AI模型服务。默认使用 `gemini-2.5-flash-image-preview` 模型进行图片生成和编辑。
+
+用户可以在应用内的"设置"页面中配置自己的 API 提供商、模型和密钥。
+
+## 🚀 部署
+
+### Vercel 部署（推荐）
+1. Fork 本仓库到你的 GitHub 账号
+2. 在 [Vercel](https://vercel.com) 中导入项目
+3. 配置环境变量（如果需要聊天功能）：
+   - `NANO_BANANA_API_KEY`
+   - `NANO_BANANA_BASE_URL`（可选）
+   - `IMAGE_API_BASE_URL`（可选）
+4. 点击部署
+
+### 其他平台部署
+支持任何 Node.js 部署平台（Netlify、Railway、Render 等）：
+1. 确保 Node.js 版本 >= 18.0.0
+2. 安装依赖：`npm install`
+3. 构建项目：`npm run build`
+4. 启动服务：`npm start`
+
+### Docker 部署
+```bash
+# 构建镜像
+docker build -t imagine-engine .
+
+# 运行容器
+docker run -p 3000:3000 imagine-engine
+```
+
+## 🔒 安全说明
+
+- **API 密钥安全**：本项目不包含任何硬编码的 API 密钥
+- **用户配置**：用户的 API 配置存储在浏览器本地，不会上传到服务器
+- **环境变量**：仅聊天功能需要在服务器端配置环境变量
+- **生产部署**：建议使用环境变量管理敏感信息，不要将 `.env` 文件提交到代码库
 
 ## 📄 许可证
 

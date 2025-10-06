@@ -26,6 +26,16 @@ yarn-error.log*
 .env*.local
 .env
 
+# 开发文档和总结（不要上传到生产环境）
+*总结*.md
+*报告*.md
+部署清单.md
+部署完成总结.md
+GITHUB_PROJECTS_ANALYSIS.md
+UPGRADE_*.md
+PRD_*.md
+TECHNICAL_*.md
+
 # Vercel
 .vercel
 

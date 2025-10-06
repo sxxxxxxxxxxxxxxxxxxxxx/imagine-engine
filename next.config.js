@@ -16,6 +16,8 @@ const nextConfig = {
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
+  // 启用 standalone 输出以支持 Docker 部署
+  output: 'standalone',
 }
 
 module.exports = nextConfig
