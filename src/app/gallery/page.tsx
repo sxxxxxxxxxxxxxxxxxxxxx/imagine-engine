@@ -32,7 +32,7 @@ export default function GalleryPage() {
 
   return (
     <WorkspaceLayout>
-      <div className="min-h-screen p-8">
+      <div className="min-h-screen p-8 max-w-[1800px] mx-auto">
         {/* 页面标题 */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
@@ -122,20 +122,20 @@ export default function GalleryPage() {
           </div>
         </div>
 
-        {/* 案例网格 */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* 案例网格 - 紧凑网格布局 */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {filteredCases.map((item) => (
-            <div key={item.id} className="glass-card p-0 overflow-hidden hover:scale-[1.02] transition-all">
+            <div key={item.id} className="glass-card p-0 overflow-hidden hover:scale-[1.02] hover:shadow-xl transition-all">
               {/* 对比图片 */}
               {/* 输入输出标签 - 在图片外部 */}
-              <div className="grid grid-cols-2 gap-1 px-3 pt-3 pb-2">
-                <div className="text-xs font-medium text-center px-2 py-1 rounded" style={{
+              <div className="grid grid-cols-2 gap-0.5 px-2 pt-2 pb-1">
+                <div className="text-[10px] font-medium text-center px-1.5 py-0.5 rounded" style={{
                   background: 'rgba(147, 51, 234, 0.1)',
                   color: '#9333ea'
                 }}>
                   📥 输入
                 </div>
-                <div className="text-xs font-medium text-center px-2 py-1 rounded" style={{
+                <div className="text-[10px] font-medium text-center px-1.5 py-0.5 rounded" style={{
                   background: 'rgba(236, 72, 153, 0.1)',
                   color: '#ec4899'
                 }}>
@@ -143,9 +143,9 @@ export default function GalleryPage() {
                 </div>
               </div>
 
-              {/* 对比图片 - 无标签遮挡 */}
+              {/* 对比图片 - 紧凑布局 */}
               <div 
-                className="grid grid-cols-2 gap-1 px-3 cursor-pointer"
+                className="grid grid-cols-2 gap-0.5 px-2 pb-2 cursor-pointer"
                 onClick={() => setLightboxImage({
                   input: item.inputImage,
                   output: item.outputImage,
@@ -153,7 +153,7 @@ export default function GalleryPage() {
                   prompt: item.prompt
                 })}
               >
-                <div className="relative group overflow-hidden rounded-lg">
+                <div className="relative group overflow-hidden rounded-md">
                   <img
                     src={item.inputImage}
                     alt="输入"
@@ -163,10 +163,10 @@ export default function GalleryPage() {
                     }}
                   />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="text-white text-sm font-semibold">🔍 查看大图</span>
+                    <span className="text-white text-xs font-semibold">🔍</span>
                   </div>
                 </div>
-                <div className="relative group overflow-hidden rounded-lg">
+                <div className="relative group overflow-hidden rounded-md">
                   <img
                     src={item.outputImage}
                     alt="输出"
@@ -176,19 +176,19 @@ export default function GalleryPage() {
                     }}
                   />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="text-white text-sm font-semibold">🔍 查看大图</span>
+                    <span className="text-white text-xs font-semibold">🔍</span>
                   </div>
                 </div>
               </div>
 
-              {/* 案例信息 */}
-              <div className="p-4">
+              {/* 案例信息 - 紧凑布局 */}
+              <div className="p-3">
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-bold flex-1" style={{ color: 'var(--text-primary)' }}>
+                  <h3 className="font-bold text-sm flex-1 line-clamp-1" style={{ color: 'var(--text-primary)' }}>
                     {item.title}
                   </h3>
                   <span 
-                    className={`text-xs px-2 py-0.5 rounded ml-2 flex-shrink-0 ${
+                    className={`text-[10px] px-1.5 py-0.5 rounded ml-2 flex-shrink-0 ${
                       item.difficulty === 'easy' ? 'bg-green-500/20 text-green-600' :
                       item.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-600' :
                       'bg-red-500/20 text-red-600'
@@ -198,14 +198,14 @@ export default function GalleryPage() {
                   </span>
                 </div>
 
-                <div className="flex flex-wrap gap-2 mb-3">
-                  <span className="text-xs px-2 py-0.5 rounded" style={{
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded" style={{
                     background: 'var(--bg-tertiary)',
                     color: 'var(--text-secondary)'
                   }}>
                     {item.category}
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded" style={{
+                  <span className="text-[10px] px-1.5 py-0.5 rounded" style={{
                     background: 'var(--bg-tertiary)',
                     color: 'var(--text-secondary)'
                   }}>
@@ -213,7 +213,7 @@ export default function GalleryPage() {
                   </span>
                 </div>
 
-                <p className="text-sm mb-3 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
+                <p className="text-xs mb-2.5 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
                   {item.description}
                 </p>
 
@@ -224,13 +224,13 @@ export default function GalleryPage() {
                       e.stopPropagation();
                       copyPrompt(item.prompt);
                     }}
-                    className="flex-1 btn-secondary py-2 text-xs"
+                    className="flex-1 btn-secondary py-1.5 text-xs"
                   >
                     📋 复制
                   </button>
                   <Link
                     href={`/create?prompt=${encodeURIComponent(item.prompt)}`}
-                    className="flex-1 btn-gradient py-2 text-xs text-center flex items-center justify-center"
+                    className="flex-1 btn-gradient py-1.5 text-xs text-center flex items-center justify-center"
                     onClick={(e) => e.stopPropagation()}
                   >
                     🎨 使用

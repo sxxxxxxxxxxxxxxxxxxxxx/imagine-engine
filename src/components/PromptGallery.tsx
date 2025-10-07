@@ -884,16 +884,16 @@ export default function PromptGallery({ isVisible, onClose, onSelectPrompt }: Pr
 
         {/* 模板网格 */}
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
             {filteredTemplates.map((template) => (
               <div
                 key={template.id}
                 className="glass-card overflow-hidden cursor-pointer hover:shadow-xl transition-all group"
                 onClick={() => handleSelectTemplate(template)}
               >
-                {/* 示例图片 */}
+                {/* 示例图片 - 缩小高度 */}
                 {template.exampleImage && (
-                  <div className="relative w-full h-36 overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
+                  <div className="relative w-full h-28 overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
                     <img
                       src={template.exampleImage}
                       alt={template.title}
@@ -905,10 +905,10 @@ export default function PromptGallery({ isVisible, onClose, onSelectPrompt }: Pr
                   </div>
                 )}
 
-                {/* 信息区域 */}
-                <div className="p-3">
+                {/* 信息区域 - 紧凑布局 */}
+                <div className="p-2.5">
                   {/* 标题行 */}
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-1.5">
                     <h3 className="font-bold text-xs flex-1 truncate" title={template.title} style={{ color: 'var(--text-primary)' }}>
                       {template.title}
                     </h3>
@@ -918,19 +918,19 @@ export default function PromptGallery({ isVisible, onClose, onSelectPrompt }: Pr
                   </div>
                   
                   {/* 描述 */}
-                  <p className="text-xs mb-2 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
+                  <p className="text-[10px] mb-2 line-clamp-1" style={{ color: 'var(--text-secondary)' }}>
                     {template.description}
                   </p>
                   
                   {/* 底部标签 */}
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs px-2 py-0.5 rounded" style={{ 
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ 
                       background: 'var(--bg-tertiary)',
                       color: 'var(--text-secondary)' 
                     }}>
                       {template.category}
                     </span>
-                    <span className={`text-xs px-2 py-0.5 rounded ${
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${
                       template.difficulty === 'easy' ? 'bg-green-500/20 text-green-600' :
                       template.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-600' :
                       'bg-red-500/20 text-red-600'

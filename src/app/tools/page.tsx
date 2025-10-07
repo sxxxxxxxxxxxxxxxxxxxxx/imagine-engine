@@ -7,11 +7,19 @@ export default function ToolsPage() {
   const [referenceImages, setReferenceImages] = useState<string[]>(['', '', '']);
   const [fusionPrompt, setFusionPrompt] = useState('');
   const [fusedImage, setFusedImage] = useState<string | null>(null);
+  const [fusionHistory, setFusionHistory] = useState<Array<{ url: string; prompt: string; imageCount: number }>>([]);
   const [isFusing, setIsFusing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [fusionMode, setFusionMode] = useState<'creative' | 'balanced' | 'precise'>('balanced');
   
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const fusionModes = [
+    { id: 'creative' as const, name: '创意融合', emoji: '🎨', desc: '强调创新和艺术性' },
+    { id: 'balanced' as const, name: '均衡融合', emoji: '⚖️', desc: '平衡所有参考图特征' },
+    { id: 'precise' as const, name: '精确融合', emoji: '🎯', desc: '严格保持原图细节' },
+  ];
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
@@ -86,6 +94,11 @@ export default function ToolsPage() {
 
       if (data.imageUrl) {
         setFusedImage(data.imageUrl);
+        setFusionHistory(prev => [{
+          url: data.imageUrl,
+          prompt: fusionPrompt,
+          imageCount: validImages.length
+        }, ...prev]);
         setProgress(100);
       }
     } catch (err) {
@@ -117,7 +130,7 @@ export default function ToolsPage() {
 
   return (
     <WorkspaceLayout>
-      <div className="min-h-screen p-6">
+      <div className="min-h-screen p-6 max-w-[1800px] mx-auto">
         {/* 页面标题 */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>🎨 创意工坊</h1>
@@ -143,7 +156,7 @@ export default function ToolsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                {referenceImages.slice(0, 4).map((img, idx) => (
+                {referenceImages.map((img, idx) => (
                   <div key={idx} className="aspect-square">
                     <input
                       ref={(el) => { fileInputRefs.current[idx] = el; }}
@@ -159,12 +172,12 @@ export default function ToolsPage() {
                           alt={`参考图${idx + 1}`}
                           className="w-full h-full object-cover rounded-lg"
                         />
-                      <button
+                        <button
                           onClick={() => removeImage(idx)}
                           className="absolute top-2 right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           ×
-                      </button>
+                        </button>
                         <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/70 rounded text-white text-xs">
                           图{idx + 1}
                         </div>
@@ -185,7 +198,7 @@ export default function ToolsPage() {
                     )}
                   </div>
                 ))}
-                    </div>
+              </div>
                     
               {referenceImages.length < 6 && (
                 <button
@@ -194,8 +207,8 @@ export default function ToolsPage() {
                 >
                   ➕ 添加更多图片 ({referenceImages.length}/6)
                 </button>
-                )}
-              </div>
+              )}
+            </div>
 
             {/* 使用提示 - 简化 */}
             <div className="glass-card p-4">
@@ -247,49 +260,77 @@ export default function ToolsPage() {
               <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                 💡 创意示例
               </h3>
-              <div className="space-y-2 flex-1">
-                <button
+              <div className="space-y-3 flex-1">
+                  <button
                   onClick={() => setFusionPrompt('融合这些图片的艺术风格和色彩，创造一幅梦幻般的超现实主义作品')}
-                  className="w-full text-left p-3 rounded-lg hover:bg-purple-500/10 text-sm transition-colors"
+                  className="w-full text-left p-4 rounded-lg hover:bg-purple-500/10 transition-colors"
                   style={{ color: 'var(--text-secondary)', background: 'var(--bg-tertiary)' }}
                 >
-                  🌈 超现实风格融合
-                </button>
-                <button
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🌈</span>
+                    <div>
+                      <div className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>超现实风格融合</div>
+                      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>梦幻、抽象、超现实主义</div>
+                    </div>
+                  </div>
+                  </button>
+                  
+                  <button
                   onClick={() => setFusionPrompt('提取所有图片的主要元素，创作一张赛博朋克风格的城市景观')}
-                  className="w-full text-left p-3 rounded-lg hover:bg-purple-500/10 text-sm transition-colors"
+                  className="w-full text-left p-4 rounded-lg hover:bg-purple-500/10 transition-colors"
                   style={{ color: 'var(--text-secondary)', background: 'var(--bg-tertiary)' }}
                 >
-                  🌃 赛博朋克风格
-                </button>
-                <button
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🌃</span>
+                    <div>
+                      <div className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>赛博朋克风格</div>
+                      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>未来科技、霓虹灯光</div>
+                    </div>
+                  </div>
+                  </button>
+                  
+                  <button
                   onClick={() => setFusionPrompt('将这些图片融合成一幅水彩画风格的艺术作品，色彩柔和温暖')}
-                  className="w-full text-left p-3 rounded-lg hover:bg-purple-500/10 text-sm transition-colors"
+                  className="w-full text-left p-4 rounded-lg hover:bg-purple-500/10 transition-colors"
                   style={{ color: 'var(--text-secondary)', background: 'var(--bg-tertiary)' }}
                 >
-                  🎨 水彩画风格
-                </button>
-                <button
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🎨</span>
+                    <div>
+                      <div className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>水彩画风格</div>
+                      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>清新淡雅、色彩温暖</div>
+                    </div>
+                  </div>
+                  </button>
+                  
+                  <button
                   onClick={() => setFusionPrompt('以印象派风格融合这些图片，色彩明亮鲜艳，笔触大胆')}
-                  className="w-full text-left p-3 rounded-lg hover:bg-purple-500/10 text-sm transition-colors"
+                  className="w-full text-left p-4 rounded-lg hover:bg-purple-500/10 transition-colors"
                   style={{ color: 'var(--text-secondary)', background: 'var(--bg-tertiary)' }}
                 >
-                  🖌️ 印象派风格
-                </button>
-                <button
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🖌️</span>
+                    <div>
+                      <div className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>印象派风格</div>
+                      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>明亮鲜艳、笔触大胆</div>
+                    </div>
+                  </div>
+                  </button>
+                  
+                  <button
                   onClick={() => setFusionPrompt('创作一张抽象艺术作品，提取图片的色彩和形状，几何化构图')}
-                  className="w-full text-left p-3 rounded-lg hover:bg-purple-500/10 text-sm transition-colors"
+                  className="w-full text-left p-4 rounded-lg hover:bg-purple-500/10 transition-colors"
                   style={{ color: 'var(--text-secondary)', background: 'var(--bg-tertiary)' }}
                 >
-                  🎭 抽象艺术
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🎭</span>
+                    <div>
+                      <div className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>抽象艺术</div>
+                      <div className="text-xs" style={{ color: 'var(--text-muted)' }}>几何化、色彩创意</div>
+                    </div>
+                  </div>
                 </button>
-              </div>
-
-              <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-                <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-                  💡 点击示例快速填充融合描述
-                </p>
-              </div>
+                </div>
             </div>
 
             {/* 融合按钮 */}
@@ -311,8 +352,8 @@ export default function ToolsPage() {
             {error && (
               <div className="glass-card p-4 border-2 border-red-500/50">
                 <p className="text-red-500 text-sm">⚠️ {error}</p>
-              </div>
-            )}
+                    </div>
+                  )}
           </div>
 
           {/* 右列 - 融合结果 */}

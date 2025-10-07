@@ -354,7 +354,42 @@
 }
 
 /* === 响应式断点优化 === */
-@media (max-width: 768px) {
+/* 确保在不同电脑上的一致性 */
+
+/* 基础容器最大宽度 */
+.container {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 固定三列布局的最小宽度，避免布局错乱 */
+@media (min-width: 1024px) {
+  .grid.lg\:grid-cols-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  /* 确保三列等高 */
+  .grid.lg\:grid-cols-3 > * {
+    min-height: 800px;
+  }
+}
+
+/* 小于1024px时改为单列，保持功能可用 */
+@media (max-width: 1023px) {
+  .grid.lg\:grid-cols-3 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  /* 取消高度限制 */
+  .grid.lg\:grid-cols-3 > * {
+    min-height: auto;
+  }
+
   .glass-card {
     @apply rounded-xl;
   }
@@ -364,9 +399,120 @@
   }
 }
 
+/* 确保字体在所有分辨率下可读 */
+@media (min-width: 1024px) and (max-width: 1280px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1536px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 1536px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+/* 避免内容溢出 */
+* {
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 确保卡片在不同屏幕上的最小宽度 */
+.glass-card {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+/* 固定布局容器，避免抖动 */
+.min-h-screen {
+  min-height: 100vh;
+  position: relative;
+}
+
 /* === 加载动画 === */
 .loading-spinner {
   border: 3px solid var(--border-subtle);
   border-top-color: #8A2BE2;
   @apply rounded-full w-8 h-8 animate-spin;
+}
+
+/* === Nano Banana 专属样式 === */
+.nano-banana-badge {
+  @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full;
+  @apply bg-gradient-to-r from-yellow-100 to-orange-100;
+  @apply border-2 border-yellow-300;
+  @apply text-yellow-900 text-xs font-bold;
+  @apply shadow-sm hover:shadow-md transition-shadow;
+}
+
+[data-theme='dark'] .nano-banana-badge {
+  @apply from-yellow-900/30 to-orange-900/30 border-yellow-700 text-yellow-300;
+}
+
+/* 批量生成进度条 */
+.batch-progress {
+  @apply relative h-2 bg-gray-200 rounded-full overflow-hidden;
+}
+
+[data-theme='dark'] .batch-progress {
+  @apply bg-gray-700;
+}
+
+.batch-progress-bar {
+  @apply h-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500;
+  @apply transition-all duration-500 ease-out;
+  animation: progress-shimmer 2s infinite;
+  background-size: 200% 100%;
+}
+
+@keyframes progress-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* 图片网格增强效果 */
+.image-grid-enhance {
+  @apply transition-all duration-300;
+  @apply hover:scale-[1.02] hover:z-10;
+}
+
+.image-grid-enhance:hover {
+  box-shadow: 0 20px 60px rgba(138, 43, 226, 0.3);
+}
+
+/* 角色一致性指示器 */
+.character-consistency-indicator {
+  @apply absolute top-2 right-2 px-2 py-1 rounded-full;
+  @apply bg-green-500 text-white text-[10px] font-bold;
+  @apply shadow-lg backdrop-blur-sm;
+}
+
+/* 融合模式选择器 */
+.fusion-mode-btn {
+  @apply px-4 py-3 rounded-xl border-2 transition-all duration-200;
+  @apply hover:border-purple-400 hover:bg-purple-50;
+}
+
+.fusion-mode-btn.active {
+  @apply border-purple-500 bg-gradient-to-r from-purple-50 to-pink-50;
+  @apply shadow-md;
+}
+
+[data-theme='dark'] .fusion-mode-btn {
+  @apply hover:bg-purple-900/20;
+}
+
+[data-theme='dark'] .fusion-mode-btn.active {
+  @apply from-purple-900/30 to-pink-900/30;
 }

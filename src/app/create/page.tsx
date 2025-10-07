@@ -14,13 +14,15 @@ export default function CreatePage() {
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [selectedRatio, setSelectedRatio] = useState('1:1');
   const [selectedStyle, setSelectedStyle] = useState('original');
+  const [batchCount, setBatchCount] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedImages, setGeneratedImages] = useState<Array<{ url: string; prompt: string }>>([]);
+  const [generatedImages, setGeneratedImages] = useState<Array<{ url: string; prompt: string; timestamp: number }>>([]);
   const [error, setError] = useState<string | null>(null);
   const [showPromptGallery, setShowPromptGallery] = useState(false);
   const [showQuickPlay, setShowQuickPlay] = useState(false);
   const [showPromptHints, setShowPromptHints] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ratios = [
@@ -70,26 +72,39 @@ export default function CreatePage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: prompt.trim(),
-          style: selectedStyle,
-          aspectRatio: selectedRatio,
-          referenceImage,
-          apiKey,
-          baseUrl,
-          model
-        })
-      });
+      // 批量生成
+      const promises = [];
+      for (let i = 0; i < batchCount; i++) {
+        promises.push(
+          fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt: prompt.trim(),
+              style: selectedStyle,
+              aspectRatio: selectedRatio,
+              referenceImage,
+              apiKey,
+              baseUrl,
+              model
+            })
+          }).then(res => res.json())
+        );
+      }
 
-      const data = await response.json();
+      const results = await Promise.all(promises);
+      const newImages = results
+        .filter(data => data.imageUrl)
+        .map(data => ({ 
+          url: data.imageUrl, 
+          prompt, 
+          timestamp: Date.now() 
+        }));
       
-      if (!response.ok) throw new Error(data.error || '生成失败');
-      
-      if (data.imageUrl) {
-        setGeneratedImages(prev => [{ url: data.imageUrl, prompt }, ...prev]);
+      if (newImages.length > 0) {
+        setGeneratedImages(prev => [...newImages, ...prev]);
+      } else {
+        throw new Error('未能生成图片');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '生成失败');
@@ -118,7 +133,7 @@ export default function CreatePage() {
 
   return (
     <WorkspaceLayout>
-      <div className="min-h-screen p-6">
+      <div className="min-h-screen p-6 max-w-[1800px] mx-auto">
         {/* 页面标题 */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>✨ AI 创作</h1>
@@ -246,6 +261,60 @@ export default function CreatePage() {
               </div>
             </div>
 
+            {/* 批量生成控制 */}
+            <div className="glass-card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <label className="block font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  批量生成
+                </label>
+                <button
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className="text-xs px-2 py-1 rounded-md hover:bg-gray-100 transition-colors"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  {showAdvanced ? '收起 ▲' : '展开 ▼'}
+                </button>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                {[1, 2, 4].map((count) => (
+                  <button
+                    key={count}
+                    onClick={() => setBatchCount(count)}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                      batchCount === count
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md'
+                        : 'bg-gray-100 hover:bg-gray-200'
+                    }`}
+                    style={batchCount !== count ? { color: 'var(--text-secondary)' } : {}}
+                  >
+                    {count}张
+                  </button>
+                ))}
+              </div>
+              
+              {showAdvanced && (
+                <div className="mt-3 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                  <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
+                    💡 批量生成可同时创建多张变体
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="1"
+                      max="4"
+                      value={batchCount}
+                      onChange={(e) => setBatchCount(Number(e.target.value))}
+                      className="flex-1"
+                    />
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {batchCount}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* 生成按钮 */}
             <button
               onClick={handleGenerate}
@@ -255,10 +324,10 @@ export default function CreatePage() {
               {isGenerating ? (
                 <span className="flex items-center justify-center">
                   <div className="loading-spinner mr-3" />
-                  AI 正在创作中...
+                  AI 正在创作第 {batchCount} 张...
                 </span>
               ) : (
-                '🎨 开始创作'
+                `🎨 开始创作${batchCount > 1 ? ` (${batchCount}张)` : ''}`
               )}
             </button>
 
@@ -273,31 +342,62 @@ export default function CreatePage() {
           <div className="flex flex-col h-full">
             {/* 艺术风格 - 占满整列 */}
             <div className="glass-card p-4 flex-1 flex flex-col">
-              <label className="block font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>🎨 艺术风格</label>
-              <div className="space-y-3 flex-1 flex flex-col justify-between">
+              <label className="block font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>🎨 艺术风格</label>
+              <div className="space-y-3.5 flex-1 flex flex-col justify-between">
                 {styles.map((style) => (
                   <button
                     key={style.id}
                     onClick={() => setSelectedStyle(style.id)}
-                    className={`w-full tool-btn ${selectedStyle === style.id ? 'active' : ''}`}
+                    className={`w-full p-4 rounded-lg border-2 transition-all ${
+                      selectedStyle === style.id 
+                        ? 'border-purple-500 bg-purple-500/10 shadow-md' 
+                        : 'border-transparent hover:border-purple-500/30'
+                    }`}
+                    style={{ background: selectedStyle === style.id ? undefined : 'var(--bg-tertiary)' }}
                   >
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center gap-3">
                       <span className="text-2xl">{style.emoji}</span>
                       <div className="text-left flex-1">
-                        <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{style.name}</div>
-                        {style.id === 'original' && (
-                          <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>默认选项</div>
+                        <div className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{style.name}</div>
+                        {style.id === 'original' ? (
+                          <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>默认选项，AI自动判断</div>
+                        ) : (
+                          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>点击切换风格</div>
                         )}
                       </div>
+                      {selectedStyle === style.id && (
+                        <div className="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
                     </div>
                   </button>
                 ))}
-                
-                {/* 底部提示 */}
-                <div className="mt-auto pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-                  <p className="text-xs text-center leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                    💡 提示：选择"保持原图"可让AI自动判断最佳风格
+
+                {/* Nano Banana 技术卡片 - 填充底部 */}
+                <div className="p-4 rounded-xl bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 border-2 border-yellow-300/50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">🍌</span>
+                    <span className="text-sm font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+                      Nano Banana AI
+                    </span>
+                  </div>
+                  <p className="text-xs leading-relaxed mb-2" style={{ color: 'var(--text-secondary)' }}>
+                    Google Gemini 2.5 Flash 顶级图像生成技术
                   </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">
+                      角色一致性
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                      批量生成
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
+                      场景融合
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -319,64 +419,88 @@ export default function CreatePage() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3 flex-1 content-start">
-                  {isGenerating && (
-                    <div className="aspect-square bg-gradient-secondary rounded-xl flex items-center justify-center border-2 border-dashed border-purple-500/50">
-                      <div className="text-center">
-                        <div className="loading-spinner mx-auto mb-4" />
-                        <p className="font-medium" style={{ color: 'var(--accent-purple)' }}>AI 正在创作中...</p>
-                      </div>
-                    </div>
-                  )}
+                <div className="space-y-4 flex-1">
+                  {/* 操作栏 */}
+                  <div className="flex items-center gap-2 pb-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                      共 {generatedImages.length} 张作品
+                    </span>
+                    {generatedImages.length > 0 && (
+                      <button
+                        onClick={() => setGeneratedImages([])}
+                        className="ml-auto text-xs px-3 py-1 rounded-md hover:bg-red-50 text-red-600 transition-colors"
+                      >
+                        🗑️ 清空
+                      </button>
+                    )}
+                  </div>
 
-                  {generatedImages.map((item, idx) => (
-                    <div key={idx} className="group relative aspect-square rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition-all" style={{ background: 'var(--bg-tertiary)' }}>
-                      <img
-                        src={item.url}
-                        alt={item.prompt}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="absolute bottom-0 left-0 right-0 p-4">
-                          <p className="text-white text-sm line-clamp-2 mb-3">{item.prompt}</p>
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                try {
-                                  const response = await fetch(item.url);
-                                  const blob = await response.blob();
-                                  const url = window.URL.createObjectURL(blob);
-                                  const link = document.createElement('a');
-                                  link.href = url;
-                                  link.download = `imagine-${Date.now()}.png`;
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                                  window.URL.revokeObjectURL(url);
-                                } catch (error) {
-                                  window.open(item.url, '_blank');
-                                }
-                              }}
-                              className="flex-1 btn-secondary py-2 text-sm"
-                            >
-                              💾 下载
-                            </button>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                sessionStorage.setItem('edit-image', item.url);
-                                window.location.href = '/edit';
-                              }}
-                              className="flex-1 btn-gradient py-2 text-sm"
-                            >
-                              ✨ 编辑
-                            </button>
+                  {/* 图片网格 */}
+                  <div className="grid grid-cols-2 gap-3 flex-1 content-start overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+                    {isGenerating && (
+                      <div className="aspect-square bg-gradient-secondary rounded-xl flex items-center justify-center border-2 border-dashed border-purple-500/50 animate-pulse">
+                        <div className="text-center">
+                          <div className="loading-spinner mx-auto mb-3" />
+                          <p className="text-sm font-medium" style={{ color: 'var(--accent-purple)' }}>
+                            AI 正在创作...
+                          </p>
+                          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                            {batchCount > 1 ? `批量生成 ${batchCount} 张` : '即将完成'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {generatedImages.map((item, idx) => (
+                      <div key={`${item.timestamp}-${idx}`} className="group relative aspect-square rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition-all shadow-md hover:shadow-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                        <img
+                          src={item.url}
+                          alt={item.prompt}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-200">
+                          <div className="absolute bottom-0 left-0 right-0 p-3">
+                            <p className="text-white text-sm line-clamp-2 mb-3">{item.prompt}</p>
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    const response = await fetch(item.url);
+                                    const blob = await response.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = `imagine-${Date.now()}.png`;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    window.URL.revokeObjectURL(url);
+                                  } catch (error) {
+                                    window.open(item.url, '_blank');
+                                  }
+                                }}
+                                className="flex-1 btn-secondary py-2 text-sm"
+                              >
+                                💾 下载
+                              </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  sessionStorage.setItem('edit-image', item.url);
+                                  window.location.href = '/edit';
+                                }}
+                                className="flex-1 btn-gradient py-2 text-sm"
+                              >
+                                ✨ 编辑
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

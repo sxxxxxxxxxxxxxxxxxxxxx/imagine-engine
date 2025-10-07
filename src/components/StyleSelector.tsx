@@ -8,127 +8,146 @@ interface StyleSelectorProps {
 }
 
 export default function StyleSelector({ selectedStyle, onStyleChange }: StyleSelectorProps) {
-  const [showAll, setShowAll] = useState(false);
-  
   const styles = [
     {
       id: 'realistic',
-      name: '写实风格',
-      description: '真实自然，细节丰富',
+      name: '超写实',
+      description: '真实自然，专业级细节',
       emoji: '📸',
-      gradient: 'from-blue-500 to-green-600',
-      preview: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop&crop=center',
+      tag: '推荐'
     },
     {
       id: 'anime',
-      name: '动漫风格',
+      name: '动漫风',
       description: '二次元，色彩鲜艳',
       emoji: '🎭',
-      gradient: 'from-pink-500 to-purple-600',
-      preview: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=300&fit=crop&crop=center',
+      tag: '热门'
     },
     {
       id: 'oil_painting',
-      name: '油画风格',
-      description: '古典艺术，笔触明显',
+      name: '油画',
+      description: '古典艺术，笔触质感',
       emoji: '🎨',
-      gradient: 'from-orange-500 to-red-600',
-      preview: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=300&h=300&fit=crop&crop=center',
+      tag: null
     },
     {
       id: 'watercolor',
-      name: '水彩风格',
+      name: '水彩',
       description: '清新淡雅，朦胧美感',
       emoji: '🌸',
-      gradient: 'from-purple-500 to-pink-600',
-      preview: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=300&h=300&fit=crop&crop=center',
+      tag: null
     },
     {
       id: 'cyberpunk',
       name: '赛博朋克',
-      description: '未来科技，霓虹色彩',
+      description: '未来科技，霓虹灯光',
       emoji: '🌃',
-      gradient: 'from-cyan-500 to-blue-600',
-      preview: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=300&h=300&fit=crop&crop=center',
+      tag: null
     },
     {
       id: 'minimalist',
-      name: '极简风格',
+      name: '极简',
       description: '简洁明了，突出主体',
       emoji: '⚪',
-      gradient: 'from-gray-500 to-gray-600',
-      preview: 'https://images.unsplash.com/photo-1493119508027-2b584f234d6c?w=300&h=300&fit=crop&crop=center',
+      tag: null
     },
   ];
 
-  const displayedStyles = showAll ? styles : styles.slice(0, 3);
-
   return (
-    <div className="space-y-4">
-      {/* 风格选择网格 */}
-      <div className="grid grid-cols-1 gap-3">
-        {displayedStyles.map((style) => (
-          <button
-            key={style.id}
-            onClick={() => onStyleChange(style.id)}
-            className={`
-              flex items-center p-3 rounded-lg border transition-all duration-200 text-left
-              ${selectedStyle === style.id 
-                ? 'border-purple-500 bg-purple-50' 
-                : 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50'
-              }
-            `}
-          >
-            {/* 风格图标 */}
-            <div className={`
-              w-10 h-10 rounded-lg flex items-center justify-center mr-3 flex-shrink-0
-              ${selectedStyle === style.id ? 'bg-purple-500' : 'bg-gray-100'}
-            `}>
-              <span className={`text-lg ${selectedStyle === style.id ? 'text-white' : 'text-gray-600'}`}>
-                {style.emoji}
-              </span>
-            </div>
-            
-            {/* 风格信息 */}
-            <div className="flex-1 min-w-0">
-              <h4 className={`font-medium text-sm ${selectedStyle === style.id ? 'text-purple-900' : 'text-gray-900'}`}>
-                {style.name}
-              </h4>
-              <p className={`text-xs ${selectedStyle === style.id ? 'text-purple-700' : 'text-gray-600'}`}>
-                {style.description}
-              </p>
-            </div>
-            
-            {/* 选中指示器 */}
-            {selectedStyle === style.id && (
-              <div className="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
+    <div className="space-y-2.5">
+      {/* 风格选择网格 - 紧凑垂直布局 */}
+      <div className="grid grid-cols-1 gap-2">
+        {styles.map((style) => {
+          const isSelected = selectedStyle === style.id;
+          return (
+            <button
+              key={style.id}
+              onClick={() => onStyleChange(style.id)}
+              className={`
+                group relative flex items-center gap-3 p-3 rounded-xl border-2 
+                transition-all duration-200 text-left overflow-hidden
+                ${isSelected 
+                  ? 'border-purple-500 bg-gradient-to-r from-purple-50 to-pink-50 shadow-md' 
+                  : 'border-gray-200 bg-white hover:border-purple-300 hover:shadow-sm'
+                }
+              `}
+            >
+              {/* 背景渐变效果 */}
+              {isSelected && (
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-500/5" />
+              )}
+
+              {/* 风格图标 */}
+              <div className={`
+                relative z-10 w-11 h-11 rounded-lg flex items-center justify-center 
+                flex-shrink-0 transition-all duration-200
+                ${isSelected 
+                  ? 'bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg scale-110' 
+                  : 'bg-gray-100 group-hover:bg-gray-200'
+                }
+              `}>
+                <span className={`text-xl ${isSelected ? 'text-white' : 'text-gray-600'}`}>
+                  {style.emoji}
+                </span>
               </div>
-            )}
-          </button>
-        ))}
+              
+              {/* 风格信息 */}
+              <div className="relative z-10 flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <h4 className={`font-semibold text-sm ${isSelected ? 'text-purple-900' : 'text-gray-900'}`}>
+                    {style.name}
+                  </h4>
+                  {style.tag && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      style.tag === '推荐' ? 'bg-orange-100 text-orange-700' :
+                      style.tag === '热门' ? 'bg-red-100 text-red-700' :
+                      'bg-blue-100 text-blue-700'
+                    }`}>
+                      {style.tag}
+                    </span>
+                  )}
+                </div>
+                <p className={`text-xs leading-tight ${isSelected ? 'text-purple-700' : 'text-gray-500'}`}>
+                  {style.description}
+                </p>
+              </div>
+              
+              {/* 选中指示器 */}
+              <div className={`
+                relative z-10 w-5 h-5 rounded-full flex items-center justify-center 
+                flex-shrink-0 transition-all duration-200
+                ${isSelected ? 'bg-purple-500 scale-100' : 'bg-transparent scale-0'}
+              `}>
+                {isSelected && (
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+
+              {/* Hover 效果 */}
+              {!isSelected && (
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-pink-500/0 group-hover:from-purple-500/5 group-hover:to-pink-500/5 transition-all duration-200" />
+              )}
+            </button>
+          );
+        })}
       </div>
-      
-      {/* 查看全部按钮 */}
-      {!showAll && styles.length > 3 && (
-        <button
-          onClick={() => setShowAll(true)}
-          className="w-full py-2 text-sm text-purple-600 hover:text-purple-700 font-medium transition-colors"
-        >
-          查看全部风格 ({styles.length})
-        </button>
-      )}
-      
-      {showAll && (
-        <button
-          onClick={() => setShowAll(false)}
-          className="w-full py-2 text-sm text-gray-600 hover:text-gray-700 font-medium transition-colors"
-        >
-          收起
-        </button>
-      )}
+
+      {/* Nano Banana 技术标识 */}
+      <div className="mt-4 p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-purple-200">
+        <div className="flex items-start gap-2">
+          <span className="text-lg">🍌</span>
+          <div>
+            <p className="text-xs font-semibold text-purple-900 mb-1">
+              Nano Banana AI
+            </p>
+            <p className="text-[10px] text-purple-700 leading-relaxed">
+              基于 Google Gemini 2.5 的顶级图像生成技术，支持角色一致性保持和场景融合
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -61,4 +61,9 @@ logs/
 # 临时文件
 tmp/
 temp/
+*.bat
+*.txt
+!QUICK_DEPLOY.md
+!README.md
+!DEPLOYMENT_GUIDE.md
 

@@ -235,7 +235,7 @@ export default function EditPage() {
 
   return (
     <WorkspaceLayout>
-      <div className="min-h-screen p-6">
+      <div className="min-h-screen p-6 max-w-[1800px] mx-auto">
         {/* 页面标题 */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>🔧 AI 编辑</h1>
@@ -377,8 +377,7 @@ export default function EditPage() {
                       onKeyDown={(e) => {
                         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                           e.preventDefault();
-                          const canEdit = uploadedImage && selectedTool !== 'none' && !isProcessing;
-                          if (canEdit) {
+                          if (uploadedImage && selectedTool !== 'none' && !isProcessing) {
                             handleEdit();
                           }
                         }

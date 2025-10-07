@@ -80,7 +80,7 @@ export default function SettingsPage() {
 
   return (
     <WorkspaceLayout>
-      <div className="min-h-screen p-6">
+      <div className="min-h-screen p-6 max-w-[1800px] mx-auto">
         {/* 页面标题 */}
         <div className="mb-6">
           <div className="flex items-center justify-between">
@@ -93,6 +93,33 @@ export default function SettingsPage() {
             <Link href="/create" className="btn-secondary px-6 py-3">
               返回创作
             </Link>
+          </div>
+        </div>
+
+        {/* Nano Banana 推荐卡片 */}
+        <div className="glass-card p-6 mb-6 border-2 border-purple-300 bg-gradient-to-r from-purple-50/50 to-pink-50/50">
+          <div className="flex items-start gap-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
+              <span className="text-3xl">🍌</span>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+                  推荐使用 Nano Banana AI
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-green-500 text-white text-[10px] font-bold">
+                  顶级
+                </span>
+              </div>
+              <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+                基于 Google Gemini 2.5 Flash 的世界级图像生成模型，支持批量生成、角色一致性、场景融合等专业功能。
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <span className="px-2 py-1 rounded-md bg-purple-100 text-purple-700 text-xs font-medium">角色一致性</span>
+                <span className="px-2 py-1 rounded-md bg-blue-100 text-blue-700 text-xs font-medium">批量生成</span>
+                <span className="px-2 py-1 rounded-md bg-green-100 text-green-700 text-xs font-medium">场景融合</span>
+              </div>
+            </div>
           </div>
         </div>
 

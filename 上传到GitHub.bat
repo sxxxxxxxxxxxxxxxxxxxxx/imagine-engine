@@ -1,47 +1,52 @@
 @echo off
-chcp 65001 >nul
-echo ======================================
-echo   正在上传到 GitHub...
-echo ======================================
+chcp 65001
+cls
+echo ================================================
+echo   上传 Imagine Engine 到 GitHub
+echo ================================================
 echo.
 
-cd /d "C:\Users\34023\Desktop\开发\imagine-engine"
+cd /d C:\Users\34023\Desktop\开发\imagine-engine
 
-echo [1/3] 添加所有更改...
-git add -A
-if %errorlevel% neq 0 (
-    echo 错误：添加文件失败！
-    pause
-    exit /b 1
+echo [1/6] 检查Git仓库...
+if not exist .git (
+    echo 初始化Git仓库...
+    git init
 )
-echo ✓ 文件添加成功
 echo.
 
-echo [2/3] 创建提交...
-git commit -m "Deploy ready: clean docs and add deployment config"
-if %errorlevel% neq 0 (
-    echo 错误：创建提交失败！
-    pause
-    exit /b 1
-)
-echo ✓ 提交创建成功
+echo [2/6] 配置Git用户信息...
+git config user.name "sxxxxxxxxxxxxxxxxxxxxx"
+git config user.email "3402365924@qq.com"
+echo ✓ 用户信息已配置
 echo.
 
-echo [3/3] 推送到 GitHub...
-git push origin master
-if %errorlevel% neq 0 (
-    echo 错误：推送失败！可能需要输入用户名和密码
-    pause
-    exit /b 1
-)
-echo ✓ 推送成功！
+echo [3/6] 检查远程仓库...
+git remote remove origin 2>nul
+git remote add origin https://github.com/sxxxxxxxxxxxxxxxxxxxxx/imagine-engine.git
+echo ✓ 远程仓库已配置
 echo.
 
-echo ======================================
-echo   🎉 上传完成！
-echo ======================================
+echo [4/6] 添加所有文件...
+git add .
+echo ✓ 文件已添加
 echo.
-echo 访问你的仓库查看：
+
+echo [5/6] 创建提交...
+git commit -m "v2.0.0 生产版本 - 基于Nano Banana AI技术 - 完整优化版"
+echo ✓ 提交已创建
+echo.
+
+echo [6/6] 推送到GitHub...
+git branch -M main
+git push -u origin main --force
+echo.
+
+echo ================================================
+echo   ✅ 上传完成！
+echo ================================================
+echo.
+echo 访问你的GitHub仓库:
 echo https://github.com/sxxxxxxxxxxxxxxxxxxxxx/imagine-engine
 echo.
 pause

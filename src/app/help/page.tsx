@@ -8,15 +8,15 @@ export default function HelpPage() {
   const [activeTab, setActiveTab] = useState('quickstart');
 
   const tabs = [
+    { id: 'nanobanana', icon: '🍌', label: 'Nano Banana' },
     { id: 'quickstart', icon: '🚀', label: '快速开始' },
     { id: 'shortcuts', icon: '⌨️', label: '快捷键' },
     { id: 'faq', icon: '❓', label: '常见问题' },
-    { id: 'docs', icon: '📚', label: '文档' },
   ];
 
   return (
     <WorkspaceLayout>
-      <div className="min-h-screen p-6">
+      <div className="min-h-screen p-6 max-w-[1800px] mx-auto">
         {/* 页面标题 */}
         <div className="mb-6">
           <div className="flex items-center justify-between">
@@ -51,6 +51,143 @@ export default function HelpPage() {
 
         {/* 内容区域 */}
         <div className="glass-card p-8">
+          {activeTab === 'nanobanana' && (
+            <div className="space-y-6 max-w-4xl">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center gap-3 mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-100 to-orange-100 border-2 border-yellow-300">
+                  <span className="text-3xl">🍌</span>
+                  <span className="text-xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+                    Nano Banana AI
+                  </span>
+                </div>
+                <h2 className="text-2xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+                  世界顶级图像生成技术
+                </h2>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  Google Gemini 2.5 Flash Image 模型的官方名称
+                </p>
+              </div>
+
+              {/* 核心特性 */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="glass-card p-5 border-2 border-purple-200">
+                  <div className="flex items-start gap-3">
+                    <span className="text-3xl">👥</span>
+                    <div>
+                      <h3 className="font-bold mb-2" style={{ color: 'var(--text-primary)' }}>角色一致性</h3>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        完美保持人物、宠物和物体在不同图像中的一致外观，适合创建系列作品和连续故事
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass-card p-5 border-2 border-blue-200">
+                  <div className="flex items-start gap-3">
+                    <span className="text-3xl">🔀</span>
+                    <div>
+                      <h3 className="font-bold mb-2" style={{ color: 'var(--text-primary)' }}>场景融合</h3>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        将多张图像无缝融合为一张，创造统一的场景和视觉效果，适合复合创作
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass-card p-5 border-2 border-green-200">
+                  <div className="flex items-start gap-3">
+                    <span className="text-3xl">⚡</span>
+                    <div>
+                      <h3 className="font-bold mb-2" style={{ color: 'var(--text-primary)' }}>批量生成</h3>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        一次生成 1-4 张变体，快速对比选择最佳效果，提升创作效率
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass-card p-5 border-2 border-orange-200">
+                  <div className="flex items-start gap-3">
+                    <span className="text-3xl">💬</span>
+                    <div>
+                      <h3 className="font-bold mb-2" style={{ color: 'var(--text-primary)' }}>自然语言控制</h3>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        使用中文描述即可精确控制图像转换，无需复杂的技术参数
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 最佳实践 */}
+              <div className="glass-card p-6 bg-gradient-to-r from-blue-50/50 to-purple-50/50 border-2 border-purple-200">
+                <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+                  💡 Nano Banana 最佳实践
+                </h3>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <span className="text-lg">✓</span>
+                    <div>
+                      <strong style={{ color: 'var(--text-primary)' }}>详细描述</strong>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>使用具体的情感、状态、颜色、材质和环境描述</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-lg">✓</span>
+                    <div>
+                      <strong style={{ color: 'var(--text-primary)' }}>批量生成</strong>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>一次生成 2-4 张变体，对比选择最佳效果</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-lg">✓</span>
+                    <div>
+                      <strong style={{ color: 'var(--text-primary)' }}>参考图引导</strong>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>上传参考图保持角色和风格一致性</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-lg">✓</span>
+                    <div>
+                      <strong style={{ color: 'var(--text-primary)' }}>多图融合</strong>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>使用创意工坊融合 2-6 张图像，创作独特效果</p>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              {/* 外部链接 */}
+              <div className="flex gap-4">
+                <a 
+                  href="https://fooocus.one/zh-TW/nano-banana" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex-1 glass-card p-4 hover:border-purple-400 border-2 border-transparent transition-all text-center"
+                >
+                  <p className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                    了解 Nano Banana
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    官方介绍和技术详情 →
+                  </p>
+                </a>
+                <a 
+                  href="https://github.com/lllyasviel/Fooocus" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex-1 glass-card p-4 hover:border-purple-400 border-2 border-transparent transition-all text-center"
+                >
+                  <p className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                    Fooocus 项目
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    GitHub 46.7k+ ⭐ →
+                  </p>
+                </a>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'quickstart' && (
             <div className="space-y-6 max-w-4xl">
               <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>
