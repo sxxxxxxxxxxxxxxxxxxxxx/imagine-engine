@@ -3,10 +3,5 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["sin1"],
-  "env": {
-    "NANO_BANANA_API_KEY": "@nano-banana-api-key",
-    "NANO_BANANA_BASE_URL": "@nano-banana-base-url",
-    "IMAGE_API_BASE_URL": "@image-api-base-url"
-  }
+  "regions": ["sin1"]
 }
