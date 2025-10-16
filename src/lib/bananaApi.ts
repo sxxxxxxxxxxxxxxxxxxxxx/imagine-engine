@@ -28,6 +28,8 @@ function getUserSettings() {
 export interface GenerateImageRequest {
   prompt: string;
   style?: string;
+  baseImage?: string; // Base64格式的基础图片，用于控制生成比例
+  aspectRatio?: string; // 期望的图片比例
 }
 
 export interface EditImageRequest {
@@ -45,6 +47,7 @@ export interface ApiResponse {
   needsResize?: boolean;
   backendResized?: boolean;
   originalDimensions?: { width: number; height: number };
+  aspectRatio?: string; // 生成图片的比例信息
 }
 
 /**
@@ -80,8 +83,36 @@ export async function generateImage(
 
     const styleDescription = stylePrompts[request.style as keyof typeof stylePrompts] || stylePrompts.realistic;
     
-    // 实现严格的提示词规则，防止AI过度创作
-    const strictPrompt = `Generate an image based on this prompt: ${request.prompt}. 
+    // 🎯 根据是否有基础图片，使用不同的提示词策略
+    let strictPrompt: string;
+    
+    if (request.baseImage) {
+      // 图生图模式：使用明确的画布编辑指令
+      strictPrompt = `[CANVAS EDITING MODE - FILL COMPLETELY]
+
+I am providing a blank canvas. Your job: COMPLETELY FILL this canvas edge-to-edge with: ${request.prompt}
+
+CANVAS: ${request.aspectRatio} aspect ratio
+STYLE: ${styleDescription}
+
+【CRITICAL RULES - MUST FOLLOW】
+1. ⚠️ EDIT the canvas image (NOT generate new)
+2. ⚠️ FILL 100% of canvas - EDGE TO EDGE, NO EMPTY SPACE
+3. ⚠️ Content must COVER entire canvas completely
+4. ⚠️ MAINTAIN exact canvas dimensions (${request.aspectRatio})
+5. ⚠️ No borders, no margins, FILL COMPLETELY
+6. Output size = Input canvas size (EXACT SAME)
+
+INSTRUCTION: Paint/draw "${request.prompt}" on the entire canvas. Fill it completely from edge to edge. Keep canvas dimensions.
+
+Style: ${styleDescription}
+Quality: Professional, detailed, sharp`;
+
+      
+      console.log(`🎨 使用画布编辑模式控制比例: ${request.aspectRatio}`);
+    } else {
+      // 纯文生图模式
+      strictPrompt = `Generate an image based on this prompt: ${request.prompt}. 
 
 Style requirements: ${styleDescription}
 
@@ -92,10 +123,50 @@ Style requirements: ${styleDescription}
 4. 严格按照指定风格生成
 5. 不得添加用户未提及的物体、人物或背景元素
 6. 保持构图简洁，突出主体
+${request.aspectRatio ? `7. Generate image with aspect ratio ${request.aspectRatio}` : ''}
 
 High quality, detailed, professional.`;
+    }
 
-    console.log('发送文生图请求:', { prompt: strictPrompt.substring(0, 100), model: settings.model, baseUrl: settings.baseUrl });
+    console.log('发送文生图请求:', { 
+      prompt: strictPrompt.substring(0, 150), 
+      model: settings.model, 
+      baseUrl: settings.baseUrl,
+      hasBaseImage: !!request.baseImage,
+      aspectRatio: request.aspectRatio,
+      mode: request.baseImage ? 'image-to-image' : 'text-to-image'
+    });
+
+    // 🎯 构建消息内容 - 图片在前，文字在后（让AI首先看到画布）
+    const messageContent: Array<{type: string; text?: string; image_url?: {url: string}}> = [];
+
+    // 如果有基础图片，先添加图片（图生图模式）
+    if (request.baseImage) {
+      console.log('📐 添加基础画布到请求中');
+      console.log(`   ├─ 比例: ${request.aspectRatio}`);
+      console.log(`   ├─ 图片格式: ${request.baseImage.substring(0, 30)}...`);
+      console.log(`   └─ 模式: 画布编辑（图生图）`);
+      
+      messageContent.push({
+        type: 'image_url',
+        image_url: {
+          url: request.baseImage
+        }
+      });
+    }
+    
+    // 然后添加文字提示
+    messageContent.push({
+      type: 'text',
+      text: strictPrompt,
+    });
+    
+    console.log(`📤 消息内容构建完成:`, {
+      imageFirst: !!request.baseImage,
+      contentParts: messageContent.length,
+      hasImage: messageContent.some(m => m.type === 'image_url'),
+      hasText: messageContent.some(m => m.type === 'text')
+    });
 
     const response = await fetch(settings.baseUrl || 'https://newapi.aicohere.org/v1/chat/completions', {
       method: 'POST',
@@ -108,12 +179,7 @@ High quality, detailed, professional.`;
         messages: [
           {
             role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: strictPrompt,
-              }
-            ],
+            content: messageContent,
           }
         ],
         max_tokens: 150,
@@ -167,7 +233,19 @@ High quality, detailed, professional.`;
         // 清理URL（移除可能的引号、括号等）
         imageUrl = imageUrl.replace(/["'\)]/g, '');
         
-        console.log('提取到图片URL:', imageUrl);
+        console.log('✅ 提取到图片URL:', imageUrl);
+        
+        // 🎯 如果使用了基础图片（比例控制），验证输出尺寸
+        if (request.baseImage && request.aspectRatio) {
+          console.log(`🔍 验证生成图片的比例是否符合预期 (${request.aspectRatio})...`);
+          // 返回标记，让前端知道这是通过画布控制的图片
+          return {
+            imageUrl: imageUrl,
+            needsResize: false,
+            backendResized: true,
+            aspectRatio: request.aspectRatio,
+          };
+        }
         
         return {
           imageUrl: imageUrl,

@@ -22,10 +22,12 @@ export async function POST(request: NextRequest) {
       hasBaseImage: !!baseImage
     });
 
-    // 调用AI API生成图片，传递配置
+    // 调用AI API生成图片，传递配置和基础图片
     const result = await generateImage({
       prompt: prompt.trim(),
-      style: style || 'realistic'
+      style: style || 'realistic',
+      baseImage: baseImage || referenceImage, // 优先使用baseImage（空白图控制比例）
+      aspectRatio
     }, {
       apiKey,
       baseUrl,

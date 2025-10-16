@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import WorkspaceLayout from '@/components/WorkspaceLayout';
 import { 
   getImageDimensions, 
@@ -8,6 +8,7 @@ import {
   downloadWithOriginalResolution,
   type ImageDimensions 
 } from '@/lib/resolutionKeeper';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 type Tool = 'none' | 'inpaint' | 'remove_bg' | 'id_photo';
 type BGColor = 'red' | 'blue' | 'white';
@@ -29,6 +30,38 @@ export default function EditPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const maskCanvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 🎯 页面加载时检查是否有从创作页面传递过来的图片
+  useEffect(() => {
+    const imageFromSession = sessionStorage.getItem('edit-image');
+    if (imageFromSession) {
+      console.log('📎 从创作页面加载图片');
+      // 加载图片并获取尺寸
+      getImageDimensions(imageFromSession)
+        .then(dimensions => {
+          setOriginalDimensions(dimensions);
+          setUploadedImage(imageFromSession);
+          setProgress(25);
+          // 🎯 自动选择"背景移除"工具，方便用户直接使用
+          setSelectedTool('remove_bg');
+          console.log(`✅ 图片加载成功: ${dimensions.width}×${dimensions.height}`);
+          console.log(`🔧 已自动选择"背景移除"工具，可直接点击"开始编辑"`);
+          
+          // 显示提示信息，告知用户工具已自动选择
+          setTimeout(() => {
+            setError('✅ 图片已加载！已为您自动选择"背景移除"工具，您可以直接点击"开始编辑"，或切换到其他工具。');
+            // 3秒后清除提示
+            setTimeout(() => setError(null), 5000);
+          }, 500);
+        })
+        .catch(err => {
+          console.error('❌ 加载图片失败:', err);
+          setError('无法加载图片');
+        });
+      // 清除 sessionStorage
+      sessionStorage.removeItem('edit-image');
+    }
+  }, []);
 
   // 上传图片
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,7 +184,38 @@ export default function EditPage() {
     setProgress(50);
 
     try {
-      const imageBase64 = uploadedImage.split(',')[1];
+      // 🎯 修复：处理 HTTP URL 和 Data URL 两种格式
+      let imageBase64 = '';
+      
+      if (uploadedImage.startsWith('data:')) {
+        // Data URL 格式：直接提取 base64 部分
+        imageBase64 = uploadedImage.split(',')[1];
+        console.log('📷 使用 Data URL 格式图片');
+      } else if (uploadedImage.startsWith('http')) {
+        // HTTP URL 格式：需要先下载并转换为 base64
+        console.log('🌐 检测到 HTTP URL，正在下载并转换...');
+        try {
+          const response = await fetch(uploadedImage);
+          const blob = await response.blob();
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          imageBase64 = dataUrl.split(',')[1];
+          console.log('✅ HTTP URL 已转换为 base64');
+        } catch (err) {
+          throw new Error('无法下载图片，请重新上传');
+        }
+      } else {
+        throw new Error('不支持的图片格式');
+      }
+      
+      if (!imageBase64) {
+        throw new Error('图片数据为空，请重新上传');
+      }
+      
       let maskBase64 = '';
 
       if (selectedTool === 'inpaint' && maskCanvasRef.current) {
@@ -160,6 +224,7 @@ export default function EditPage() {
       }
 
       setProgress(75);
+      console.log(`📤 准备发送编辑请求: 工具=${selectedTool}, 图片数据长度=${imageBase64.length}`);
 
       const response = await fetch('/api/edit', {
         method: 'POST',
@@ -184,12 +249,16 @@ export default function EditPage() {
       if (data.imageUrl) {
         if (originalDimensions) {
           try {
+            console.log('📐 检查编辑后图片尺寸...');
             const editedDimensions = await getImageDimensions(data.imageUrl);
+            console.log(`原始尺寸: ${originalDimensions.width}×${originalDimensions.height}`);
+            console.log(`编辑后尺寸: ${editedDimensions.width}×${editedDimensions.height}`);
             
             if (
               editedDimensions.width !== originalDimensions.width ||
               editedDimensions.height !== originalDimensions.height
             ) {
+              console.log('⚠️ 尺寸不匹配，开始调整...');
               setNeedsResizing(true);
               
               const resizedImageUrl = await resizeImageToOriginal(
@@ -198,15 +267,19 @@ export default function EditPage() {
                 originalDimensions.height
               );
               
+              console.log('✅ 图片已调整到原始尺寸');
               setEditedImage(resizedImageUrl);
               setNeedsResizing(false);
             } else {
+              console.log('✅ 尺寸已匹配，无需调整');
               setEditedImage(data.imageUrl);
             }
           } catch (err) {
+            console.error('❌ 尺寸调整失败，使用原图:', err);
             setEditedImage(data.imageUrl);
           }
         } else {
+          console.log('⚠️ 无原始尺寸信息，直接使用编辑结果');
           setEditedImage(data.imageUrl);
         }
         
@@ -228,10 +301,21 @@ export default function EditPage() {
         originalDimensions || undefined,
         `edited-${Date.now()}.png`
       );
+      // 下载成功提示
+      console.log('✅ 图片下载成功');
     } catch (error) {
-      window.open(imageUrl, '_blank');
+      // 下载失败时显示错误提示，而不是打开新窗口
+      const errorMessage = error instanceof Error ? error.message : '下载失败，请重试';
+      setError(errorMessage);
+      console.error('❌ 下载失败:', errorMessage);
     }
   };
+
+  // 🎯 添加快捷键支持
+  useKeyboardShortcuts({
+    onGenerate: handleEdit,
+    isGenerating: isProcessing
+  });
 
   return (
     <WorkspaceLayout>
@@ -377,7 +461,8 @@ export default function EditPage() {
                       onKeyDown={(e) => {
                         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                           e.preventDefault();
-                          if (uploadedImage && selectedTool !== 'none' && !isProcessing) {
+                          // 此时 selectedTool 已是 'inpaint'，直接检查其他条件
+                          if (uploadedImage && !isProcessing) {
                             handleEdit();
                           }
                         }
@@ -439,9 +524,26 @@ export default function EditPage() {
               )}
             </button>
 
+            {/* 🎯 友好提示：未选择工具时 */}
+            {uploadedImage && selectedTool === 'none' && !isProcessing && (
+              <div className="glass-card p-4 border-2 border-yellow-500/50 bg-yellow-50/50">
+                <p className="text-yellow-700 text-sm">💡 请先选择一个编辑工具（智能修复、背景移除或证件照换背景）</p>
+              </div>
+            )}
+
             {error && (
-              <div className="glass-card p-4 border-2 border-red-500/50">
-                <p className="text-red-400 text-sm">⚠️ {error}</p>
+              <div className={`glass-card p-4 border-2 ${
+                error.startsWith('✅') 
+                  ? 'border-green-500/50 bg-green-50/50' 
+                  : 'border-red-500/50'
+              }`}>
+                <p className={`text-sm ${
+                  error.startsWith('✅') 
+                    ? 'text-green-700' 
+                    : 'text-red-400'
+                }`}>
+                  {error.startsWith('✅') ? error : `⚠️ ${error}`}
+                </p>
               </div>
             )}
 

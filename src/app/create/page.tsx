@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import WorkspaceLayout from '@/components/WorkspaceLayout';
 import { downloadWithOriginalResolution } from '@/lib/resolutionKeeper';
 import PromptGallery from '@/components/PromptGallery';
@@ -8,6 +8,7 @@ import QuickPlayModes from '@/components/QuickPlayModes';
 import PromptHints from '@/components/PromptHints';
 import KeyboardShortcutsHelp from '@/components/KeyboardShortcutsHelp';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { createBlankImageByRatio } from '@/utils/imageGenerator';
 
 export default function CreatePage() {
   const [prompt, setPrompt] = useState('');
@@ -24,6 +25,34 @@ export default function CreatePage() {
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 🎯 页面加载时从 localStorage 恢复作品历史
+  useEffect(() => {
+    const savedImages = localStorage.getItem('imagine-engine-generated-images');
+    if (savedImages) {
+      try {
+        const images = JSON.parse(savedImages);
+        setGeneratedImages(images);
+        console.log(`📚 恢复历史作品: ${images.length} 张`);
+      } catch (err) {
+        console.error('❌ 恢复历史作品失败:', err);
+      }
+    }
+  }, []);
+
+  // 🎯 作品变化时自动保存到 localStorage
+  useEffect(() => {
+    if (generatedImages.length > 0) {
+      try {
+        // 限制保存数量，避免 localStorage 溢出
+        const imagesToSave = generatedImages.slice(0, 50); // 最多保存50张
+        localStorage.setItem('imagine-engine-generated-images', JSON.stringify(imagesToSave));
+        console.log(`💾 自动保存作品历史: ${imagesToSave.length} 张`);
+      } catch (err) {
+        console.error('❌ 保存作品历史失败:', err);
+      }
+    }
+  }, [generatedImages]);
 
   const ratios = [
     { id: '1:1', label: '1:1', size: '1024×1024' },
@@ -72,6 +101,20 @@ export default function CreatePage() {
     setError(null);
 
     try {
+      // 🎯 核心改进：根据是否有参考图决定使用策略
+      let baseImageToUse = null;
+      
+      if (referenceImage) {
+        // 有参考图：直接使用参考图（用户想基于参考图生成）
+        baseImageToUse = referenceImage;
+        console.log(`📎 使用用户上传的参考图`);
+      } else {
+        // 无参考图：创建空白基础图片来控制比例
+        console.log(`🎨 用户选择的比例: ${selectedRatio}`);
+        baseImageToUse = createBlankImageByRatio(selectedRatio);
+        console.log(`✅ 已创建空白基础图片，将用于控制AI生成的图片比例`);
+      }
+
       // 批量生成
       const promises = [];
       for (let i = 0; i < batchCount; i++) {
@@ -83,7 +126,7 @@ export default function CreatePage() {
               prompt: prompt.trim(),
               style: selectedStyle,
               aspectRatio: selectedRatio,
-              referenceImage,
+              baseImage: baseImageToUse, // 使用参考图或空白基础图
               apiKey,
               baseUrl,
               model
@@ -93,16 +136,34 @@ export default function CreatePage() {
       }
 
       const results = await Promise.all(promises);
+      
+      // 🎯 修复：为每张图片生成唯一的 timestamp，避免被去重
       const newImages = results
         .filter(data => data.imageUrl)
-        .map(data => ({ 
+        .map((data, index) => ({ 
           url: data.imageUrl, 
           prompt, 
-          timestamp: Date.now() 
+          timestamp: Date.now() + index  // 每张图片不同的 timestamp
         }));
+      
+      console.log(`📊 批量生成结果: 请求 ${batchCount} 张，成功 ${newImages.length} 张`);
       
       if (newImages.length > 0) {
         setGeneratedImages(prev => [...newImages, ...prev]);
+        console.log(`✅ 成功生成 ${newImages.length} 张图片，期望比例: ${selectedRatio}`);
+        
+        // 🎯 验证生成的图片尺寸（异步，不阻塞UI）
+        newImages.forEach((img, idx) => {
+          const image = new Image();
+          image.onload = () => {
+            const actualRatio = (image.naturalWidth / image.naturalHeight).toFixed(2);
+            console.log(`📐 图片 ${idx + 1} 尺寸验证:`);
+            console.log(`   ├─ 实际尺寸: ${image.naturalWidth}×${image.naturalHeight}`);
+            console.log(`   ├─ 实际比例: ${actualRatio}`);
+            console.log(`   └─ 期望比例: ${selectedRatio}`);
+          };
+          image.src = img.url;
+        });
       } else {
         throw new Error('未能生成图片');
       }
@@ -114,9 +175,15 @@ export default function CreatePage() {
   };
 
   // 集成键盘快捷键（放在函数定义之后）
+  // 🎯 使用 useCallback 稳定化回调函数
+  const handleTogglePromptGallery = useCallback(() => {
+    setShowPromptGallery(prev => !prev);
+    console.log('⌨️ 切换提示词画廊');
+  }, []);
+
   useKeyboardShortcuts({
     onGenerate: handleGenerate,
-    onTogglePromptGallery: () => setShowPromptGallery(prev => !prev),
+    onTogglePromptGallery: handleTogglePromptGallery,
     isGenerating
   });
 
@@ -427,7 +494,13 @@ export default function CreatePage() {
                     </span>
                     {generatedImages.length > 0 && (
                       <button
-                        onClick={() => setGeneratedImages([])}
+                        onClick={() => {
+                          if (confirm('确定要清空所有作品吗？此操作无法撤销。')) {
+                            setGeneratedImages([]);
+                            localStorage.removeItem('imagine-engine-generated-images');
+                            console.log('🗑️ 已清空所有作品历史');
+                          }
+                        }}
                         className="ml-auto text-xs px-3 py-1 rounded-md hover:bg-red-50 text-red-600 transition-colors"
                       >
                         🗑️ 清空
@@ -453,6 +526,18 @@ export default function CreatePage() {
 
                     {generatedImages.map((item, idx) => (
                       <div key={`${item.timestamp}-${idx}`} className="group relative aspect-square rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition-all shadow-md hover:shadow-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                        {/* 🎯 删除按钮（右上角） */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setGeneratedImages(prev => prev.filter((_, i) => i !== idx));
+                            console.log(`🗑️ 已删除第 ${idx + 1} 张作品`);
+                          }}
+                          className="absolute top-2 right-2 w-8 h-8 bg-red-500/80 hover:bg-red-600 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
+                          title="删除这张图片"
+                        >
+                          ×
+                        </button>
                         <img
                           src={item.url}
                           alt={item.prompt}
@@ -467,18 +552,44 @@ export default function CreatePage() {
                                 onClick={async (e) => {
                                   e.stopPropagation();
                                   try {
-                                    const response = await fetch(item.url);
-                                    const blob = await response.blob();
-                                    const url = window.URL.createObjectURL(blob);
-                                    const link = document.createElement('a');
-                                    link.href = url;
-                                    link.download = `imagine-${Date.now()}.png`;
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
-                                    window.URL.revokeObjectURL(url);
+                                    // 检查是否是 data URL
+                                    if (item.url.startsWith('data:')) {
+                                      // Data URL 直接下载
+                                      const link = document.createElement('a');
+                                      link.href = item.url;
+                                      link.download = `imagine-${Date.now()}.png`;
+                                      link.style.display = 'none';
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                    } else {
+                                      // HTTP URL 使用 fetch + blob
+                                      const response = await fetch(item.url, {
+                                        method: 'GET',
+                                        mode: 'cors',
+                                        cache: 'no-cache',
+                                        headers: { 'Accept': 'image/*' }
+                                      });
+                                      
+                                      if (!response.ok) {
+                                        throw new Error(`下载失败: ${response.status}`);
+                                      }
+                                      
+                                      const blob = await response.blob();
+                                      const url = window.URL.createObjectURL(blob);
+                                      const link = document.createElement('a');
+                                      link.href = url;
+                                      link.download = `imagine-${Date.now()}.png`;
+                                      link.style.display = 'none';
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+                                    }
+                                    console.log('✅ 图片下载成功');
                                   } catch (error) {
-                                    window.open(item.url, '_blank');
+                                    console.error('❌ 下载失败:', error);
+                                    setError(error instanceof Error ? error.message : '下载失败，请重试');
                                   }
                                 }}
                                 className="flex-1 btn-secondary py-2 text-sm"

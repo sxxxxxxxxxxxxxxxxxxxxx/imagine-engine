@@ -23,8 +23,12 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig = {}) {
       // Cmd/Ctrl + Enter: 生成/编辑
       if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault();
+        console.log('⌨️ 快捷键触发: Ctrl+Enter');
         if (!config.isGenerating && config.onGenerate) {
+          console.log('✅ 执行生成/编辑操作');
           config.onGenerate();
+        } else {
+          console.log('⚠️ 正在生成中或无回调函数');
         }
         return;
       }
@@ -38,31 +42,37 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig = {}) {
       switch (event.key.toLowerCase()) {
         case 'g':
           event.preventDefault();
+          console.log('⌨️ 快捷键触发: G - 跳转到AI创作');
           router.push('/create');
           break;
 
         case 'e':
           event.preventDefault();
+          console.log('⌨️ 快捷键触发: E - 跳转到AI编辑');
           router.push('/edit');
           break;
 
         case 't':
           event.preventDefault();
+          console.log('⌨️ 快捷键触发: T - 打开创意工坊');
           router.push('/tools');
           break;
 
         case 'c':
           event.preventDefault();
+          console.log('⌨️ 快捷键触发: C - 打开AI伙伴');
           router.push('/chat');
           break;
 
         case 'l':
           event.preventDefault();
+          console.log('⌨️ 快捷键触发: L - 查看创意画廊');
           router.push('/gallery');
           break;
 
         case 'h':
           event.preventDefault();
+          console.log('⌨️ 快捷键触发: H - 切换历史');
           if (config.onToggleHistory) {
             config.onToggleHistory();
           }
@@ -70,6 +80,7 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig = {}) {
 
         case 'p':
           event.preventDefault();
+          console.log('⌨️ 快捷键触发: P - 打开提示词画廊');
           if (config.onTogglePromptGallery) {
             config.onTogglePromptGallery();
           }
@@ -78,14 +89,20 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig = {}) {
         case '?':
           // 显示快捷键帮助
           event.preventDefault();
+          console.log('⌨️ 快捷键触发: ? - 显示帮助');
           showKeyboardHelp();
           break;
       }
     };
 
+    console.log('🎯 快捷键系统已初始化');
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [router, pathname, config]);
+    
+    return () => {
+      console.log('🎯 快捷键系统已卸载');
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [router, pathname, config.onGenerate, config.onToggleHistory, config.onTogglePromptGallery, config.isGenerating]);
 }
 
 // 显示快捷键帮助弹窗

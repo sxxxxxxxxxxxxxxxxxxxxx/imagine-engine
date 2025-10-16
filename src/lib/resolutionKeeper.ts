@@ -110,13 +110,14 @@ export async function resizeImageToOriginal(
 /**
  * 两步缩放算法（质量+速度优化）
  * 适用于大尺寸变化
+ * 借鉴 nanobanana 项目的高效实现
  */
 function twoStepResize(
   img: HTMLImageElement,
   targetWidth: number,
   targetHeight: number
 ): string {
-  // 第一步：快速缩放到中间尺寸
+  // 第一步：快速缩放到中间尺寸（速度优先）
   const intermediateWidth = Math.max(targetWidth, Math.floor(img.naturalWidth / 2));
   const intermediateHeight = Math.max(targetHeight, Math.floor(img.naturalHeight / 2));
   
@@ -125,9 +126,9 @@ function twoStepResize(
   tempCanvas.height = intermediateHeight;
   
   const tempCtx = tempCanvas.getContext('2d', {
-    alpha: true,
-    desynchronized: true,
-    willReadFrequently: false
+    alpha: true,  // 支持透明背景
+    desynchronized: true,  // 性能优化
+    willReadFrequently: false  // 写多读少
   });
   
   if (!tempCtx) {
@@ -138,7 +139,7 @@ function twoStepResize(
   tempCtx.imageSmoothingQuality = 'medium'; // 中等质量，速度快
   tempCtx.drawImage(img, 0, 0, intermediateWidth, intermediateHeight);
   
-  // 第二步：精细缩放到目标尺寸
+  // 第二步：精细缩放到目标尺寸（质量优先）
   const finalCanvas = document.createElement('canvas');
   finalCanvas.width = targetWidth;
   finalCanvas.height = targetHeight;
@@ -157,12 +158,13 @@ function twoStepResize(
   finalCtx.imageSmoothingQuality = 'high'; // 高质量
   finalCtx.drawImage(tempCanvas, 0, 0, targetWidth, targetHeight);
   
-  // 返回高质量 JPEG（95%质量）
+  // 返回高质量图片（95%质量，PNG格式保持透明）
   return finalCanvas.toDataURL('image/png', 0.95);
 }
 
 /**
  * 直接缩放（适用于小尺寸变化）
+ * 单步高质量缩放
  */
 function directResize(
   img: HTMLImageElement,
@@ -174,9 +176,9 @@ function directResize(
   canvas.height = targetHeight;
   
   const ctx = canvas.getContext('2d', {
-    alpha: true,
-    desynchronized: true,
-    willReadFrequently: false
+    alpha: true,  // 支持透明背景
+    desynchronized: true,  // 性能优化
+    willReadFrequently: false  // 写多读少
   });
   
   if (!ctx) {
@@ -184,9 +186,10 @@ function directResize(
   }
   
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
+  ctx.imageSmoothingQuality = 'high';  // 高质量缩放
   ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
   
+  // 返回高质量图片（95%质量，PNG格式保持透明）
   return canvas.toDataURL('image/png', 0.95);
 }
 
@@ -220,31 +223,45 @@ export async function downloadWithOriginalResolution(
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = filename || generateFilename(originalDimensions);
+      link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      console.log('✅ 下载完成 (Data URL)');
     } else {
       // HTTP URL 先转换为 Blob
-      const response = await fetch(downloadUrl);
+      const response = await fetch(downloadUrl, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-cache',
+        headers: {
+          'Accept': 'image/*'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`下载失败: ${response.status} ${response.statusText}`);
+      }
+      
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
       
       const link = document.createElement('a');
       link.href = blobUrl;
       link.download = filename || generateFilename(originalDimensions);
+      link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
       // 清理
       setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+      console.log('✅ 下载完成 (HTTP URL)');
     }
-    
-    console.log('✅ 下载完成');
   } catch (error) {
     console.error('❌ 下载失败:', error);
-    // 降级：直接打开图片
-    window.open(imageUrl, '_blank');
+    // 抛出错误，让调用者处理，而不是直接打开新窗口
+    throw new Error(error instanceof Error ? error.message : '下载失败，请重试');
   }
 }
 
