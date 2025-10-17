@@ -1,7 +1,7 @@
 {
   "name": "imagine-engine",
-  "version": "2.0.0",
-  "description": "创想引擎 - 基于 Nano Banana AI 的专业图像创作平台",
+  "version": "3.0.0-alpha",
+  "description": "Imagine Engine - Professional AI Image Creation Platform for Tech Innovators",
   "private": true,
   "author": "Imagine Engine Team",
   "license": "MIT",
@@ -11,18 +11,29 @@
     "start": "next start"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^8.1.0",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.75.0",
+    "@tanstack/react-virtual": "^3.0.0",
     "@types/node": "^20.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "dexie": "^3.2.4",
     "lucide-react": "^0.544.0",
     "modelfusion": "^0.137.0",
     "next": "^14.0.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "typescript": "^5.0.0"
+    "react-markdown": "^9.0.0",
+    "react-syntax-highlighter": "^15.5.0",
+    "remark-gfm": "^4.0.0",
+    "stripe": "^19.1.0",
+    "typescript": "^5.0.0",
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.7",
+    "@types/react-syntax-highlighter": "^15.5.0",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.0.0",

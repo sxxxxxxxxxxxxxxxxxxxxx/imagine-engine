@@ -86,6 +86,26 @@ const aspectRatios: AspectRatio[] = [
     height: 1365,
     description: '横向摄影'
   },
+  { 
+    id: '4:5', 
+    label: '竖海报', 
+    icon: '📋', 
+    size: '1024×1280', 
+    width: 1024, 
+    height: 1280,
+    description: '竖屏海报',
+    popular: false
+  },
+  { 
+    id: '5:4', 
+    label: '横海报', 
+    icon: '🎨', 
+    size: '1280×1024', 
+    width: 1280, 
+    height: 1024,
+    description: '横屏海报',
+    popular: false
+  },
 ];
 
 interface AspectRatioSelectorProps {

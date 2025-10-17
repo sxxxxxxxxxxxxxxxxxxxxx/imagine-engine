@@ -2,255 +2,419 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import FirstTimeGuide from '@/components/FirstTimeGuide';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { 
+  Sparkles, 
+  Wand2, 
+  Boxes, 
+  Code2,
+  Zap,
+  Shield,
+  ArrowRight,
+  CheckCircle2,
+  Image as ImageIcon
+} from 'lucide-react';
 
 export default function HomePage() {
-  const [showGuide, setShowGuide] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { language } = useLanguage();
 
   useEffect(() => {
-    const hasApiKey = localStorage.getItem('imagine-engine-api-key');
-    const hasCompletedGuide = localStorage.getItem('imagine-engine-guide-completed');
-    
-    if (!hasApiKey && !hasCompletedGuide) {
-      setShowGuide(true);
-    }
+    setMounted(true);
   }, []);
-  const modules = [
-    {
-      icon: '✨',
-      title: 'AI 创作',
-      description: '批量生成，角色一致性',
-      features: ['批量生成 1-4 张', '超写实/动漫风格', '参考图引导'],
-      path: '/create',
-      gradient: 'from-purple-600 to-pink-600',
-      badge: 'NEW'
+
+  const content = {
+    zh: {
+      hero: {
+        badge: 'v3.0 技术版',
+        title1: '专业 AI 图像',
+        title2: '创作工作台',
+        description: '面向开发者和技术创新者。多模型支持、API 访问和专业工具，适合认真的 AI 图像创作。',
+        cta1: '开始使用',
+        cta2: '查看文档'
+      },
+      features: [
+        { title: 'AI Studio', description: '多模型支持的专业图片生成' },
+        { title: 'Editor', description: '支持图层的高级编辑工具' },
+        { title: 'Playground', description: '实验模型和参数调优', badge: '新功能' },
+        { title: 'API 访问', description: '完整的开发者 API 文档', badge: 'Pro' },
+      ],
+      highlights: [
+        { title: '多模型支持', description: '在 Gemini、DALL-E、Stable Diffusion 等之间自由切换' },
+        { title: '开发者优先', description: '完整 API 访问、详细日志和调试工具' },
+        { title: '批量处理', description: '同时生成最多 8 个变体' },
+      ],
+      pricing: {
+        title: '简单透明的定价',
+        free: {
+          name: '免费版',
+          price: '¥0',
+          features: ['每天 10 次生成', '基础模型', '保存 20 张作品'],
+          cta: '免费开始'
+        },
+        pro: {
+          name: '专业版',
+          price: '¥68',
+          period: '/月',
+          badge: '热门',
+          features: ['每月 500 次生成', '所有模型', '无限存储', 'API 访问'],
+          cta: '升级到专业版'
+        },
+        team: {
+          name: '团队版',
+          price: '¥198',
+          period: '/用户',
+          features: ['无限生成', '团队协作', '优先支持', '自定义品牌'],
+          cta: '联系销售'
+        }
+      },
+      footer: {
+        product: '产品',
+        resources: '资源',
+        company: '公司',
+        copyright: '专业 AI 创作平台'
+      }
     },
-    {
-      icon: '🔧',
-      title: 'AI 编辑',
-      description: '精确编辑，智能修图',
-      features: ['智能遮罩', '背景移除', '证件照制作'],
-      path: '/edit',
-      gradient: 'from-blue-600 to-cyan-600',
-      badge: null
-    },
-    {
-      icon: '🎨',
-      title: '创意工坊',
-      description: '多图融合，场景合成',
-      features: ['2-6张图融合', '场景统一', '创意合成'],
-      path: '/tools',
-      gradient: 'from-green-600 to-teal-600',
-      badge: 'HOT'
-    },
-    {
-      icon: '💬',
-      title: 'AI 伙伴',
-      description: '对话式创作助手',
-      features: ['智能对话', '创意建议', '连续创作'],
-      path: '/chat',
-      gradient: 'from-orange-600 to-red-600',
-      badge: null
-    },
-    {
-      icon: '🖼️',
-      title: '创意画廊',
-      description: '72+ 精选案例',
-      features: ['分类浏览', '一键应用', 'GitHub 收藏'],
-      path: '/gallery',
-      gradient: 'from-pink-600 to-rose-600',
-      badge: null
+    en: {
+      hero: {
+        badge: 'v3.0 Tech Edition',
+        title1: 'Professional AI Image',
+        title2: 'Creation Workspace',
+        description: 'Built for developers and tech innovators. Multi-model support, API access, and advanced tools for serious AI image creation.',
+        cta1: 'Get Started',
+        cta2: 'Documentation'
+      },
+      features: [
+        { title: 'AI Studio', description: 'Professional image generation with multi-model support' },
+        { title: 'Editor', description: 'Advanced editing tools with layer support' },
+        { title: 'Playground', description: 'Experiment with models and parameters', badge: 'New' },
+        { title: 'API Access', description: 'Full API documentation for developers', badge: 'Pro' },
+      ],
+      highlights: [
+        { title: 'Multi-Model Support', description: 'Switch between Gemini, DALL-E, Stable Diffusion and more' },
+        { title: 'Developer-First', description: 'Complete API access, detailed logs, and debugging tools' },
+        { title: 'Batch Processing', description: 'Generate up to 8 variations simultaneously' },
+      ],
+      pricing: {
+        title: 'Simple, Transparent Pricing',
+        free: {
+          name: 'Free',
+          price: '$0',
+          features: ['10 generations/day', 'Basic models', '20 saved artworks'],
+          cta: 'Start Free'
+        },
+        pro: {
+          name: 'Pro',
+          price: '$9.99',
+          period: '/mo',
+          badge: 'Popular',
+          features: ['500 generations/month', 'All models', 'Unlimited storage', 'API access'],
+          cta: 'Upgrade to Pro'
+        },
+        team: {
+          name: 'Team',
+          price: '$29.99',
+          period: '/user',
+          features: ['Unlimited generations', 'Team collaboration', 'Priority support', 'Custom branding'],
+          cta: 'Contact Sales'
+        }
+      },
+      footer: {
+        product: 'Product',
+        resources: 'Resources',
+        company: 'Company',
+        copyright: 'Professional AI Creation Platform'
+      }
     }
+  };
+
+  const t = content[language];
+
+  if (!mounted) {
+    return null;
+  }
+
+  // Features 数据（不依赖翻译数组，避免索引错误）
+  const features = [
+    { 
+      icon: Sparkles, 
+      href: '/create',
+      title: 'AI Studio',
+      description: language === 'zh' ? '多模型支持的专业图片生成' : 'Professional image generation with multi-model support',
+      badge: null
+    },
+    { 
+      icon: Wand2, 
+      href: '/edit',
+      title: 'Editor',
+      description: language === 'zh' ? '支持图层的高级编辑工具' : 'Advanced editing tools with layer support',
+      badge: null
+    },
+    {
+      icon: ImageIcon, 
+      href: '/showcase',
+      title: 'Showcase',
+      description: language === 'zh' ? '110个精选案例，学习优秀提示词' : '110 curated cases to learn great prompts',
+      badge: language === 'zh' ? '新功能' : 'New'
+    },
+    { 
+      icon: Boxes, 
+      href: '/playground',
+      title: 'Playground',
+      description: language === 'zh' ? '实验模型和参数调优' : 'Experiment with models and parameters',
+      badge: language === 'zh' ? '开发中' : 'Beta'
+    },
+    { 
+      icon: Code2, 
+      href: '/docs',
+      title: language === 'zh' ? '文档' : 'Docs',
+      description: language === 'zh' ? '完整的开发者API文档' : 'Full API documentation for developers',
+      badge: null
+    },
+  ];
+
+  const highlights = [
+    { 
+      icon: Zap,
+      title: language === 'zh' ? '多模型支持' : 'Multi-Model Support',
+      description: language === 'zh' ? '在 Gemini、DALL-E、Stable Diffusion 等之间自由切换' : 'Switch between Gemini, DALL-E, Stable Diffusion and more'
+    },
+    { 
+      icon: Shield,
+      title: language === 'zh' ? '开发者优先' : 'Developer-First',
+      description: language === 'zh' ? '完整 API 访问、详细日志和调试工具' : 'Complete API access, detailed logs, and debugging tools'
+    },
+    { 
+      icon: CheckCircle2,
+      title: language === 'zh' ? '批量处理' : 'Batch Processing',
+      description: language === 'zh' ? '同时生成最多 8 个变体' : 'Generate up to 8 variations simultaneously'
+    },
   ];
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
-      {/* 背景装饰 */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-pink-600/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-      </div>
-
-      <div className="relative z-10">
-        {/* Hero 区域 */}
-        <div className="container mx-auto px-4 py-20">
-          <div className="text-center mb-16">
-            <div className="inline-block mb-6">
-              <div className="w-20 h-20 bg-gradient-primary rounded-2xl flex items-center justify-center animate-pulse-glow mx-auto">
-                <span className="text-4xl">🎨</span>
-              </div>
-            </div>
-            <div className="inline-flex items-center gap-3 mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-purple-200">
-              <span className="text-2xl">🍌</span>
-              <span className="text-sm font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Powered by Nano Banana AI
+    <div className="page-container">
+      {/* Hero Section */}
+      <section className="content-wrapper py-20">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 mb-6">
+            <div className="w-2 h-2 bg-primary-400 rounded-full animate-pulse" />
+            <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
+              {t.hero.badge}
               </span>
             </div>
-            <h1 className="text-6xl font-bold mb-6" style={{ fontFamily: 'Orbitron, sans-serif', color: 'var(--text-primary)' }}>
-              <span className="text-gradient">创想引擎</span>
+
+          <h1 className="text-5xl md:text-6xl font-bold text-dark-900 dark:text-dark-50 mb-6">
+            {t.hero.title1}
+            <br />
+            <span className="text-primary-400">{t.hero.title2}</span>
             </h1>
-            <p className="text-2xl mb-4" style={{ color: 'var(--text-secondary)' }}>
-              基于 Google Gemini 2.5 的专业图像创作平台
-            </p>
-            <p className="text-lg max-w-2xl mx-auto" style={{ color: 'var(--text-muted)' }}>
-              采用世界顶级 Nano Banana AI 技术<br />
-              支持批量生成、角色一致性、场景融合等专业级功能
-            </p>
+
+          <p className="text-xl text-dark-600 dark:text-dark-400 mb-8 max-w-2xl mx-auto">
+            {t.hero.description}
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/create" className="btn-primary px-8 py-3 text-base">
+              {t.hero.cta1}
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+            <Link href="/docs" className="btn-secondary px-8 py-3 text-base">
+              {t.hero.cta2}
+            </Link>
           </div>
+        </div>
+      </section>
 
-          {/* 功能模块卡片 - 紧凑小卡片 */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8 max-w-7xl mx-auto">
-            {modules.map((module) => (
+      {/* Features Grid */}
+      <section className="content-wrapper py-16">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
+          {features.map((feature) => {
+            const Icon = feature.icon;
+            return (
               <Link
-                key={module.path}
-                href={module.path}
-                className="group"
+                key={feature.href}
+                href={feature.href}
+                className="card-hover p-6 group"
               >
-                <div className="glass-card p-5 h-full hover:scale-105 transition-all duration-300 cursor-pointer relative overflow-hidden">
-                  {/* Badge 标签 */}
-                  {module.badge && (
-                    <div className={`absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                      module.badge === 'NEW' ? 'bg-green-500' :
-                      module.badge === 'HOT' ? 'bg-red-500' :
-                      'bg-blue-500'
-                    } text-white shadow-md`}>
-                      {module.badge}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/20 rounded-lg flex items-center justify-center group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30 transition-colors">
+                    <Icon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                     </div>
+                  {feature.badge && (
+                    <span className="badge-primary">{feature.badge}</span>
                   )}
+                </div>
+                <h3 className="text-lg font-semibold text-dark-900 dark:text-dark-50 mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-dark-600 dark:text-dark-400">
+                  {feature.description}
+                </p>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
 
-                  <div className={`w-12 h-12 bg-gradient-to-br ${module.gradient} rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-md`}>
-                    <span className="text-2xl">{module.icon}</span>
+      {/* Highlights */}
+      <section className="content-wrapper py-16">
+        <div className="card p-8">
+          <h2 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-8 text-center">
+            {language === 'zh' ? '为什么选择创想引擎' : 'Why Choose Imagine Engine'}
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {highlights.map((highlight, idx) => {
+              const Icon = highlight.icon;
+              return (
+                <div key={idx} className="text-center">
+                  <div className="inline-flex w-16 h-16 bg-primary-50 dark:bg-primary-900/20 rounded-2xl items-center justify-center mb-4">
+                    <Icon className="w-8 h-8 text-primary-600 dark:text-primary-400" />
                   </div>
-                  <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>{module.title}</h3>
-                  <p className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>{module.description}</p>
-                  <ul className="space-y-1.5 mb-3">
-                    {module.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center text-xs" style={{ color: 'var(--text-muted)' }}>
-                        <span className="text-purple-500 mr-2 text-sm">✓</span>
+                  <h3 className="text-lg font-semibold text-dark-900 dark:text-dark-50 mb-2">
+                    {highlight.title}
+                  </h3>
+                  <p className="text-dark-600 dark:text-dark-400">
+                    {highlight.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Preview */}
+      <section className="content-wrapper py-16">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-8 text-center">
+            {t.pricing.title}
+          </h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Free */}
+            <div className="card p-6">
+              <div className="text-sm font-medium text-dark-600 dark:text-dark-400 mb-2">
+                {t.pricing.free.name}
+              </div>
+              <div className="text-3xl font-bold text-dark-900 dark:text-dark-50 mb-4">
+                {t.pricing.free.price}
+              </div>
+              <ul className="space-y-3 mb-6">
+                {t.pricing.free.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-center gap-2 text-sm text-dark-600 dark:text-dark-400">
+                    <CheckCircle2 className="w-4 h-4 text-primary-400" />
                         {feature}
                       </li>
                     ))}
                   </ul>
-                  <div className="flex items-center text-purple-500 text-sm font-semibold group-hover:translate-x-1 transition-transform">
-                    开始使用 →
-                  </div>
-                </div>
+              <Link href="/create" className="btn-secondary w-full">
+                {t.pricing.free.cta}
               </Link>
-            ))}
-          </div>
-
-          {/* Nano Banana AI 特性展示 */}
-          <div className="glass-card p-6 max-w-7xl mx-auto">
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-2 mb-2">
-                <span className="text-2xl">🍌</span>
-                <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                  Nano Banana AI 核心技术
-                </h2>
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                基于 Google Gemini 2.5 Flash 的世界顶级图像生成模型
-              </p>
             </div>
             
-            <div className="grid md:grid-cols-6 gap-4">
-              <div className="text-center p-4 rounded-lg bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200">
-                <div className="text-3xl mb-2">👥</div>
-                <h3 className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>角色一致性</h3>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>保持角色外观</p>
+            {/* Pro */}
+            <div className="card-elevated p-6 border-2 border-primary-400 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="badge-accent">{t.pricing.pro.badge}</span>
               </div>
-              <div className="text-center p-4 rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200">
-                <div className="text-3xl mb-2">🔀</div>
-                <h3 className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>场景融合</h3>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>多图无缝合成</p>
+              <div className="text-sm font-medium text-primary-600 dark:text-primary-400 mb-2">
+                {t.pricing.pro.name}
               </div>
-              <div className="text-center p-4 rounded-lg bg-gradient-to-br from-green-50 to-teal-50 border border-green-200">
-                <div className="text-3xl mb-2">⚡</div>
-                <h3 className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>批量生成</h3>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>1-4张快速创作</p>
+              <div className="text-3xl font-bold text-dark-900 dark:text-dark-50 mb-4">
+                {t.pricing.pro.price}<span className="text-base font-normal text-dark-500">{t.pricing.pro.period}</span>
               </div>
-              <div className="text-center p-4 rounded-lg bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200">
-                <div className="text-3xl mb-2">💬</div>
-                <h3 className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>自然语言</h3>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>中文精确控制</p>
+              <ul className="space-y-3 mb-6">
+                {t.pricing.pro.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-center gap-2 text-sm text-dark-600 dark:text-dark-400">
+                    <CheckCircle2 className="w-4 h-4 text-primary-400" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/settings" className="btn-primary w-full">
+                {t.pricing.pro.cta}
+              </Link>
               </div>
-              <div className="text-center p-4 rounded-lg bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200">
-                <div className="text-3xl mb-2">🏆</div>
-                <h3 className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>专业输出</h3>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>商业级质量</p>
+
+            {/* Team */}
+            <div className="card p-6">
+              <div className="text-sm font-medium text-dark-600 dark:text-dark-400 mb-2">
+                {t.pricing.team.name}
               </div>
-              <div className="text-center p-4 rounded-lg bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-200">
-                <div className="text-3xl mb-2">🔒</div>
-                <h3 className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>SynthID 水印</h3>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>透明标识AI内容</p>
+              <div className="text-3xl font-bold text-dark-900 dark:text-dark-50 mb-4">
+                {t.pricing.team.price}<span className="text-base font-normal text-dark-500">{t.pricing.team.period}</span>
               </div>
+              <ul className="space-y-3 mb-6">
+                {t.pricing.team.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-center gap-2 text-sm text-dark-600 dark:text-dark-400">
+                    <CheckCircle2 className="w-4 h-4 text-primary-400" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/settings" className="btn-secondary w-full">
+                {t.pricing.team.cta}
+              </Link>
             </div>
           </div>
         </div>
+      </section>
 
         {/* Footer */}
-        <footer className="border-t py-12" style={{ borderColor: 'var(--border-subtle)' }}>
-          <div className="container mx-auto px-4 max-w-6xl">
-            <div className="grid md:grid-cols-3 gap-8 mb-8">
+      <footer className="border-t border-dark-200 dark:border-dark-800 mt-20">
+        <div className="content-wrapper py-12">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
               <div>
-                <h4 className="font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                  <span>🎨</span>
-                  <span>创想引擎</span>
-                </h4>
-                <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
-                  基于 Nano Banana AI 的专业图像创作平台
-                </p>
-                <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  <span>🍌</span>
-                  <span>Powered by Google Gemini 2.5</span>
-                </div>
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-5 h-5 text-primary-400" />
+                <span className="font-bold text-dark-900 dark:text-dark-50">
+                  {language === 'zh' ? '创想引擎' : 'Imagine Engine'}
+                </span>
+              </div>
+              <p className="text-sm text-dark-600 dark:text-dark-400">
+                {language === 'zh' 
+                  ? '面向开发者的专业 AI 图像创作工作台。' 
+                  : 'Professional AI image creation workspace for developers.'}
+              </p>
               </div>
               
               <div>
-                <h4 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>快速链接</h4>
-                <ul className="space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  <li><Link href="/create" className="hover:text-purple-500 transition-colors">AI 创作</Link></li>
-                  <li><Link href="/edit" className="hover:text-purple-500 transition-colors">AI 编辑</Link></li>
-                  <li><Link href="/tools" className="hover:text-purple-500 transition-colors">创意工坊</Link></li>
-                  <li><Link href="/gallery" className="hover:text-purple-500 transition-colors">创意画廊</Link></li>
+              <h4 className="font-semibold text-dark-900 dark:text-dark-50 mb-4">
+                {t.footer.product}
+              </h4>
+              <ul className="space-y-2 text-sm text-dark-600 dark:text-dark-400">
+                <li><Link href="/create" className="hover:text-primary-400">AI Studio</Link></li>
+                <li><Link href="/edit" className="hover:text-primary-400">Editor</Link></li>
+                <li><Link href="/playground" className="hover:text-primary-400">Playground</Link></li>
+                <li><Link href="/gallery" className="hover:text-primary-400">Gallery</Link></li>
                 </ul>
               </div>
               
               <div>
-                <h4 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>支持与帮助</h4>
-                <ul className="space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  <li><Link href="/settings" className="hover:text-purple-500 transition-colors">设置中心</Link></li>
-                  <li><Link href="/help" className="hover:text-purple-500 transition-colors">帮助中心</Link></li>
-                  <li>
-                    <a href="https://fooocus.one/zh-TW/nano-banana" target="_blank" rel="noopener noreferrer" className="hover:text-purple-500 transition-colors flex items-center gap-1">
-                      了解 Nano Banana
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  </li>
+              <h4 className="font-semibold text-dark-900 dark:text-dark-50 mb-4">
+                {t.footer.resources}
+              </h4>
+              <ul className="space-y-2 text-sm text-dark-600 dark:text-dark-400">
+                <li><Link href="/docs" className="hover:text-primary-400">{language === 'zh' ? '文档' : 'Documentation'}</Link></li>
+                <li><Link href="/templates" className="hover:text-primary-400">Templates</Link></li>
+                <li><Link href="/settings" className="hover:text-primary-400">API</Link></li>
                 </ul>
-              </div>
             </div>
             
-            <div className="pt-6 border-t text-center" style={{ borderColor: 'var(--border-subtle)' }}>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                © 2025 创想引擎 - 基于 Nano Banana AI 技术 | 专业图像创作平台
-              </p>
+            <div>
+              <h4 className="font-semibold text-dark-900 dark:text-dark-50 mb-4">
+                {t.footer.company}
+              </h4>
+              <ul className="space-y-2 text-sm text-dark-600 dark:text-dark-400">
+                <li><Link href="/settings" className="hover:text-primary-400">{language === 'zh' ? '设置' : 'Settings'}</Link></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="pt-8 border-t border-dark-200 dark:border-dark-800 text-center text-sm text-dark-500">
+            © 2025 {language === 'zh' ? '创想引擎' : 'Imagine Engine'}. {t.footer.copyright}.
             </div>
           </div>
         </footer>
-      </div>
-
-      {/* 首次使用引导 */}
-      {showGuide && (
-        <FirstTimeGuide
-          onComplete={() => {
-            setShowGuide(false);
-            window.location.href = '/create';
-          }}
-        />
-      )}
     </div>
   );
 }

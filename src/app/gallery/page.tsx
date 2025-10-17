@@ -1,327 +1,399 @@
 'use client';
 
-import { useState } from 'react';
-import WorkspaceLayout from '@/components/WorkspaceLayout';
+import { useState, useEffect } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
+// import { useVirtualizer } from '@tanstack/react-virtual'; // 暂时注释，等安装依赖
+// import { db, getArtworks, deleteArtwork, type Artwork } from '@/lib/db'; // 暂时注释
+import { Search, Grid3x3, List, Download, Trash2, Edit } from 'lucide-react';
 import Link from 'next/link';
-import { fullGalleryCases as galleryCases, type GalleryCase } from '@/data/fullGalleryData';
+
+// 临时类型定义（等 db.ts 可用后移除）
+interface Artwork {
+  id?: number;
+  prompt: string;
+  model: string;
+  aspectRatio: string;
+  imageUrl: string;
+  thumbnail?: string;
+  timestamp: number;
+}
 
 export default function GalleryPage() {
-  const [selectedCategory, setSelectedCategory] = useState('全部');
+  const [artworks, setArtworks] = useState<Artwork[]>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('全部');
-  const [lightboxImage, setLightboxImage] = useState<{input: string; output: string; title: string; prompt: string} | null>(null);
+  const [filterModel, setFilterModel] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const { language } = useLanguage();
 
-  const categories = ['全部', '风格转换', '创意编辑', '创意生成', '专业应用', '特效合成'];
-  const difficulties = ['全部', 'easy', 'medium', 'hard'];
-  const difficultyLabels = { easy: '简单', medium: '中等', hard: '高级' };
+  // 加载作品（暂时从 localStorage 加载，等 IndexedDB 准备好后切换）
+  useEffect(() => {
+    loadArtworks();
+  }, []);
 
-  const filteredCases = galleryCases.filter(item => {
-    const matchesCategory = selectedCategory === '全部' || item.category === selectedCategory;
-    const matchesSearch = 
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.prompt.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDifficulty = selectedDifficulty === '全部' || item.difficulty === selectedDifficulty;
-    return matchesCategory && matchesSearch && matchesDifficulty;
-  });
-
-  const copyPrompt = (prompt: string) => {
-    navigator.clipboard.writeText(prompt);
-    alert('提示词已复制到剪贴板！');
+  const loadArtworks = async () => {
+    setLoading(true);
+    try {
+      // 暂时使用 localStorage（等 db.ts 可用后切换到 IndexedDB）
+      const savedImages = localStorage.getItem('imagine-engine-generated-images');
+      if (savedImages) {
+        const images = JSON.parse(savedImages) as Array<{ url: string; prompt: string; timestamp: number }>;
+        const convertedArtworks: Artwork[] = images.map((img, idx) => ({
+          id: idx,
+          prompt: img.prompt,
+          model: 'unknown',
+          aspectRatio: '1:1',
+          imageUrl: img.url,
+          timestamp: img.timestamp
+        }));
+        setArtworks(convertedArtworks);
+      }
+    } catch (error) {
+      console.error('加载作品失败:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // 筛选作品
+  const filteredArtworks = artworks.filter(artwork => {
+    const matchesSearch = artwork.prompt.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesModel = filterModel === 'all' || artwork.model === filterModel;
+    return matchesSearch && matchesModel;
+  });
+
+  const handleDelete = (id: number) => {
+    if (confirm(language === 'zh' ? '确定要删除这张作品吗？' : 'Delete this artwork?')) {
+      setArtworks(prev => prev.filter(a => a.id !== id));
+      // TODO: 同步删除到 IndexedDB
+      // 同步更新 localStorage
+      const updatedArtworks = artworks.filter(a => a.id !== id);
+      const images = updatedArtworks.map(a => ({
+        url: a.imageUrl,
+        prompt: a.prompt,
+        timestamp: a.timestamp
+      }));
+      localStorage.setItem('imagine-engine-generated-images', JSON.stringify(images));
+    }
+  };
+
+  // 下载图片函数 - 多重策略确保下载成功
+  const handleDownload = async (imageUrl: string, filename?: string) => {
+    const downloadFilename = filename || `gallery-${Date.now()}.png`;
+    
+    console.log('🔽 开始下载图片:', imageUrl.substring(0, 100));
+    
+    // 策略1: 尝试no-cors模式的fetch
+    try {
+      const response = await fetch(imageUrl, {
+        mode: 'no-cors',
+        cache: 'no-cache'
+      });
+      throw new Error('no-cors mode, fallback to proxy');
+    } catch (firstError) {
+      console.log('⚠️ no-cors方式不可行，尝试服务端代理');
+      
+      // 策略2: 通过服务端代理下载（主要方案）
+      try {
+        const proxyResponse = await fetch(`/api/proxy-image?url=${encodeURIComponent(imageUrl)}`);
+        
+        if (!proxyResponse.ok) {
+          throw new Error(`Proxy failed: ${proxyResponse.status}`);
+        }
+        
+        const blob = await proxyResponse.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = downloadFilename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        
+        setTimeout(() => {
+          link.click();
+          console.log('✅ 通过服务端代理下载成功');
+          
+          setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
+          }, 100);
+        }, 10);
+        
+        return;
+        
+      } catch (proxyError) {
+        console.error('❌ 服务端代理失败:', proxyError);
+        
+        // 策略3: 尝试cors模式的fetch
+        try {
+          const corsResponse = await fetch(imageUrl, {
+            mode: 'cors',
+            credentials: 'omit',
+            headers: {
+              'Accept': 'image/*'
+            }
+          });
+          
+          if (!corsResponse.ok) throw new Error('CORS fetch failed');
+          
+          const blob = await corsResponse.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = downloadFilename;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          
+          setTimeout(() => {
+            link.click();
+            console.log('✅ 通过CORS直接下载成功');
+            
+            setTimeout(() => {
+              document.body.removeChild(link);
+              URL.revokeObjectURL(blobUrl);
+            }, 100);
+          }, 10);
+          
+          return;
+          
+        } catch (corsError) {
+          console.error('❌ CORS直接下载失败:', corsError);
+          
+          // 策略4: 最终备用方案 - 新窗口打开
+          console.log('⚠️ 所有下载方式失败，在新窗口打开图片');
+          const newWindow = window.open(imageUrl, '_blank');
+          
+          if (newWindow) {
+            alert(language === 'zh' 
+              ? '⚠️ 自动下载失败，已在新窗口打开图片。请右键点击图片选择"图片另存为"' 
+              : '⚠️ Auto-download failed. Image opened in new window. Please right-click and "Save image as"');
+          } else {
+            alert(language === 'zh' 
+              ? '❌ 下载失败，请允许弹出窗口或手动复制图片链接' 
+              : '❌ Download failed. Please allow pop-ups or copy image URL manually');
+          }
+        }
+      }
+    }
+  };
+
+  // 编辑图片
+  const handleEdit = (imageUrl: string) => {
+    sessionStorage.setItem('edit-image', imageUrl);
+    window.location.href = '/edit';
+  };
+
+  const models = Array.from(new Set(artworks.map(a => a.model)));
+
   return (
-    <WorkspaceLayout>
-      <div className="min-h-screen p-8 max-w-[1800px] mx-auto">
-        {/* 页面标题 */}
+    <div className="page-container">
+      <div className="content-wrapper">
+        {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-4xl font-bold mb-2" style={{ 
-                fontFamily: 'Orbitron, sans-serif',
-                color: 'var(--text-primary)' 
-              }}>
-                🎨 创意画廊
-              </h1>
-              <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
-                {galleryCases.length}+ 精选案例 · GitHub Awesome-Nano-Banana (14k⭐)
-              </p>
-            </div>
-            <Link href="/create" className="btn-gradient px-6 py-3">
-              ✨ 开始创作
-            </Link>
-          </div>
+          <h1 className="text-3xl font-bold text-dark-900 dark:text-dark-50 mb-2">
+            {language === 'zh' ? '作品画廊' : 'Gallery'}
+          </h1>
+          <p className="text-dark-600 dark:text-dark-400">
+            {language === 'zh' 
+              ? `${filteredArtworks.length} 张作品 · 自动保存到本地` 
+              : `${filteredArtworks.length} artworks · Auto-saved locally`}
+          </p>
         </div>
 
-        {/* 筛选和搜索 */}
-        <div className="glass-card p-6 mb-6">
-          {/* 搜索框 */}
-          <div className="mb-4">
+        {/* Toolbar */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          {/* Search */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="🔍 搜索案例、提示词、作者..."
-              className="input-glass w-full"
+              placeholder={language === 'zh' ? '搜索提示词...' : 'Search prompts...'}
+              className="input pl-10"
             />
           </div>
 
-          {/* 分类标签 */}
-          <div className="mb-4">
-            <div className="flex items-center mb-2">
-              <span className="text-sm font-semibold mr-3" style={{ color: 'var(--text-primary)' }}>
-                📂 分类：
-              </span>
-              <div className="flex gap-2 flex-wrap">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      selectedCategory === category
-                        ? 'bg-gradient-primary text-white shadow-lg'
-                        : 'btn-secondary'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* 难度筛选 */}
-          <div>
-            <div className="flex items-center">
-              <span className="text-sm font-semibold mr-3" style={{ color: 'var(--text-primary)' }}>
-                🎯 难度：
-              </span>
-              <div className="flex gap-2">
-                {difficulties.map((diff) => (
-                  <button
-                    key={diff}
-                    onClick={() => setSelectedDifficulty(diff)}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                      selectedDifficulty === diff
-                        ? 'bg-gradient-primary text-white'
-                        : 'btn-secondary'
-                    }`}
-                  >
-                    {diff === '全部' ? '全部' : difficultyLabels[diff as keyof typeof difficultyLabels]}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* 统计信息 */}
-          <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              📊 共找到 <span className="font-bold text-purple-600">{filteredCases.length}</span> 个精选案例
-            </p>
-          </div>
-        </div>
-
-        {/* 案例网格 - 紧凑网格布局 */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {filteredCases.map((item) => (
-            <div key={item.id} className="glass-card p-0 overflow-hidden hover:scale-[1.02] hover:shadow-xl transition-all">
-              {/* 对比图片 */}
-              {/* 输入输出标签 - 在图片外部 */}
-              <div className="grid grid-cols-2 gap-0.5 px-2 pt-2 pb-1">
-                <div className="text-[10px] font-medium text-center px-1.5 py-0.5 rounded" style={{
-                  background: 'rgba(147, 51, 234, 0.1)',
-                  color: '#9333ea'
-                }}>
-                  📥 输入
-                </div>
-                <div className="text-[10px] font-medium text-center px-1.5 py-0.5 rounded" style={{
-                  background: 'rgba(236, 72, 153, 0.1)',
-                  color: '#ec4899'
-                }}>
-                  📤 输出
-                </div>
-              </div>
-
-              {/* 对比图片 - 紧凑布局 */}
-              <div 
-                className="grid grid-cols-2 gap-0.5 px-2 pb-2 cursor-pointer"
-                onClick={() => setLightboxImage({
-                  input: item.inputImage,
-                  output: item.outputImage,
-                  title: item.title,
-                  prompt: item.prompt
-                })}
-              >
-                <div className="relative group overflow-hidden rounded-md">
-                  <img
-                    src={item.inputImage}
-                    alt="输入"
-                    className="w-full aspect-square object-cover transition-transform group-hover:scale-105"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23f0f0f0" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-size="20"%3E输入图%3C/text%3E%3C/svg%3E';
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="text-white text-xs font-semibold">🔍</span>
-                  </div>
-                </div>
-                <div className="relative group overflow-hidden rounded-md">
-                  <img
-                    src={item.outputImage}
-                    alt="输出"
-                    className="w-full aspect-square object-cover transition-transform group-hover:scale-105"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23f0f0f0" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-size="20"%3E输出图%3C/text%3E%3C/svg%3E';
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="text-white text-xs font-semibold">🔍</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 案例信息 - 紧凑布局 */}
-              <div className="p-3">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-bold text-sm flex-1 line-clamp-1" style={{ color: 'var(--text-primary)' }}>
-                    {item.title}
-                  </h3>
-                  <span 
-                    className={`text-[10px] px-1.5 py-0.5 rounded ml-2 flex-shrink-0 ${
-                      item.difficulty === 'easy' ? 'bg-green-500/20 text-green-600' :
-                      item.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-600' :
-                      'bg-red-500/20 text-red-600'
-                    }`}
-                  >
-                    {difficultyLabels[item.difficulty]}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  <span className="text-[10px] px-1.5 py-0.5 rounded" style={{
-                    background: 'var(--bg-tertiary)',
-                    color: 'var(--text-secondary)'
-                  }}>
-                    {item.category}
-                  </span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded" style={{
-                    background: 'var(--bg-tertiary)',
-                    color: 'var(--text-secondary)'
-                  }}>
-                    {item.author}
-                  </span>
-                </div>
-
-                <p className="text-xs mb-2.5 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
-                  {item.description}
-                </p>
-
-                {/* 操作按钮 */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      copyPrompt(item.prompt);
-                    }}
-                    className="flex-1 btn-secondary py-1.5 text-xs"
-                  >
-                    📋 复制
-                  </button>
-                  <Link
-                    href={`/create?prompt=${encodeURIComponent(item.prompt)}`}
-                    className="flex-1 btn-gradient py-1.5 text-xs text-center flex items-center justify-center"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    🎨 使用
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 空状态 */}
-        {filteredCases.length === 0 && (
-          <div className="text-center py-20">
-            <span className="text-6xl">🔍</span>
-            <h3 className="text-xl font-bold mt-4 mb-2" style={{ color: 'var(--text-primary)' }}>
-              没有找到匹配的案例
-            </h3>
-            <p style={{ color: 'var(--text-secondary)' }}>
-              试试其他关键词或分类
-            </p>
-          </div>
-        )}
-
-        {/* Lightbox 全屏查看 */}
-        {lightboxImage && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: 'rgba(0, 0, 0, 0.95)' }}
-            onClick={() => setLightboxImage(null)}
+          {/* Filter by Model */}
+          <select
+            value={filterModel}
+            onChange={(e) => setFilterModel(e.target.value)}
+            className="select w-48"
           >
-            <div 
-              className="max-w-7xl w-full"
-              onClick={(e) => e.stopPropagation()}
+            <option value="all">{language === 'zh' ? '所有模型' : 'All Models'}</option>
+            {models.map(model => (
+              <option key={model} value={model}>{model}</option>
+            ))}
+          </select>
+
+          {/* View Mode */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={viewMode === 'grid' ? 'toolbar-btn-active' : 'toolbar-btn'}
+              title="Grid View"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-white">{lightboxImage.title}</h3>
-                <button
-                  onClick={() => setLightboxImage(null)}
-                  className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white text-2xl transition-colors"
-                >
-                  ×
-                </button>
-              </div>
+              <Grid3x3 className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={viewMode === 'list' ? 'toolbar-btn-active' : 'toolbar-btn'}
+              title="List View"
+            >
+              <List className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
 
-              {/* 输入输出对比 */}
-              <div className="grid md:grid-cols-2 gap-4 mb-6">
-                <div>
-                  <div className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-                    <span className="px-2 py-1 bg-purple-600 rounded">输入</span>
-                    原始图片
-                  </div>
-                  <img
-                    src={lightboxImage.input}
-                    alt="输入"
-                    className="w-full rounded-xl shadow-2xl"
-                  />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-                    <span className="px-2 py-1 bg-pink-600 rounded">输出</span>
-                    AI生成效果
-                  </div>
-                  <img
-                    src={lightboxImage.output}
-                    alt="输出"
-                    className="w-full rounded-xl shadow-2xl"
-                  />
-                </div>
-              </div>
-
-              {/* 提示词 */}
-              <div className="glass-card p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-white flex items-center gap-2">
-                    💬 完整提示词
-                  </h4>
-                  <button
-                    onClick={() => copyPrompt(lightboxImage.prompt)}
-                    className="btn-gradient px-4 py-2 text-sm"
-                  >
-                    📋 复制提示词
-                  </button>
-                </div>
-                <p className="text-white text-sm leading-relaxed bg-black/20 p-4 rounded-lg">
-                  {lightboxImage.prompt}
-                </p>
-              </div>
+        {/* Artworks Grid/List (暂时使用普通渲染，等虚拟滚动库安装后启用) */}
+        {loading ? (
+          <div className="grid grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="loading-pulse aspect-square rounded-lg" />
+            ))}
+          </div>
+        ) : filteredArtworks.length === 0 ? (
+          <div className="card p-12 text-center">
+            <p className="text-dark-500">
+              {language === 'zh' ? '还没有作品，去创作一张吧！' : 'No artworks yet. Create one!'}
+            </p>
+            <Link href="/create" className="btn-primary mt-4">
+              {language === 'zh' ? '开始创作' : 'Start Creating'}
+            </Link>
+          </div>
+        ) : (
+          <div className="h-[calc(100vh-300px)] overflow-auto">
+            <div className={viewMode === 'grid' ? 'grid grid-cols-4 gap-4' : 'space-y-4'}>
+              {filteredArtworks.map((artwork) => (
+                <ArtworkCard
+                  key={artwork.id}
+                  artwork={artwork}
+                  viewMode={viewMode}
+                  onDelete={() => artwork.id !== undefined && handleDelete(artwork.id)}
+                  onDownload={handleDownload}
+                  onEdit={handleEdit}
+                  language={language}
+                />
+              ))}
             </div>
           </div>
         )}
       </div>
-    </WorkspaceLayout>
+    </div>
+  );
+}
+
+// 作品卡片组件
+function ArtworkCard({
+  artwork,
+  viewMode,
+  onDelete,
+  onDownload,
+  onEdit,
+  language
+}: {
+  artwork: Artwork;
+  viewMode: 'grid' | 'list';
+  onDelete: () => void;
+  onDownload: (imageUrl: string, filename?: string) => void;
+  onEdit: (imageUrl: string) => void;
+  language: 'zh' | 'en';
+}) {
+  if (viewMode === 'list') {
+    return (
+      <div className="card-hover p-4 flex gap-4">
+        <img
+          src={artwork.thumbnail || artwork.imageUrl}
+          alt={artwork.prompt}
+          className="w-24 h-24 object-cover rounded-lg"
+          loading="lazy"
+        />
+        <div className="flex-1">
+          <p className="text-dark-900 dark:text-dark-50 font-medium mb-2 line-clamp-2">
+            {artwork.prompt}
+          </p>
+          <div className="flex gap-2 mb-2">
+            <span className="badge-neutral text-xs">{artwork.model}</span>
+            <span className="badge-neutral text-xs">{artwork.aspectRatio}</span>
+          </div>
+          <p className="text-xs text-dark-500">
+            {new Date(artwork.timestamp).toLocaleDateString()}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => onDownload(artwork.imageUrl, `${artwork.prompt.slice(0, 20)}-${Date.now()}.png`)}
+            className="toolbar-btn" 
+            title={language === 'zh' ? '下载' : 'Download'}
+          >
+            <Download className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={() => onEdit(artwork.imageUrl)}
+            className="toolbar-btn" 
+            title={language === 'zh' ? '编辑' : 'Edit'}
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button onClick={onDelete} className="toolbar-btn" title={language === 'zh' ? '删除' : 'Delete'}>
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card-hover group overflow-hidden">
+      <div className="relative aspect-square flex items-center justify-center bg-dark-50 dark:bg-dark-900 p-2">
+        <img
+          src={artwork.thumbnail || artwork.imageUrl}
+          alt={artwork.prompt}
+          className="max-w-full max-h-full object-contain"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute bottom-0 left-0 right-0 p-4">
+            <p className="text-white text-sm line-clamp-2 mb-3">{artwork.prompt}</p>
+            <div className="flex gap-2">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDownload(artwork.imageUrl, `${artwork.prompt.slice(0, 20)}-${Date.now()}.png`);
+                }}
+                className="btn-secondary text-sm py-1"
+                title={language === 'zh' ? '下载' : 'Download'}
+              >
+                <Download className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(artwork.imageUrl);
+                }}
+                className="btn-primary text-sm py-1 flex-1 flex items-center justify-center gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                {language === 'zh' ? '编辑' : 'Edit'}
+              </button>
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={onDelete}
+          className="absolute top-2 right-2 w-8 h-8 bg-accent-500/80 hover:bg-accent-600 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="p-3">
+        <div className="flex gap-2">
+          <span className="badge-neutral text-xs">{artwork.model}</span>
+          <span className="badge-neutral text-xs">{artwork.aspectRatio}</span>
+        </div>
+      </div>
+    </div>
   );
 }

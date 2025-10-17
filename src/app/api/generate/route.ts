@@ -4,7 +4,7 @@ import { generateImage } from '@/lib/bananaApi';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { prompt, style, aspectRatio, referenceImage, baseImage, apiKey, baseUrl, model } = body;
+    const { prompt, style, aspectRatio, referenceImage, referenceImages, baseImage, apiKey, baseUrl, model } = body;
 
     // 验证必需参数
     if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
@@ -14,19 +14,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ✅ 多图融合支持
+    const hasMultipleImages = referenceImages && Array.isArray(referenceImages) && referenceImages.length > 1;
+
     console.log('收到文生图请求:', { 
       prompt: prompt.substring(0, 100) + '...', 
       style, 
       aspectRatio,
       hasReferenceImage: !!referenceImage,
-      hasBaseImage: !!baseImage
+      hasBaseImage: !!baseImage,
+      multiImageCount: hasMultipleImages ? referenceImages.length : 0  // ✅ 记录多图数量
     });
 
     // 调用AI API生成图片，传递配置和基础图片
     const result = await generateImage({
       prompt: prompt.trim(),
       style: style || 'realistic',
-      baseImage: baseImage || referenceImage, // 优先使用baseImage（空白图控制比例）
+      baseImage: baseImage || referenceImage,  // 单图模式
+      referenceImages: hasMultipleImages ? referenceImages : undefined,  // ✅ 多图模式
       aspectRatio
     }, {
       apiKey,

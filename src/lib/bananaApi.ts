@@ -29,6 +29,7 @@ export interface GenerateImageRequest {
   prompt: string;
   style?: string;
   baseImage?: string; // Base64格式的基础图片，用于控制生成比例
+  referenceImages?: string[]; // ✅ 多图融合：多张参考图的Base64数组
   aspectRatio?: string; // 期望的图片比例
 }
 
@@ -83,11 +84,37 @@ export async function generateImage(
 
     const styleDescription = stylePrompts[request.style as keyof typeof stylePrompts] || stylePrompts.realistic;
     
-    // 🎯 根据是否有基础图片，使用不同的提示词策略
+    // 🎯 根据是否有参考图片，使用不同的提示词策略
     let strictPrompt: string;
     
-    if (request.baseImage) {
-      // 图生图模式：使用明确的画布编辑指令
+    // ✅ 多图融合模式
+    if (request.referenceImages && request.referenceImages.length > 1) {
+      strictPrompt = `[MULTI-IMAGE FUSION MODE]
+
+I am providing ${request.referenceImages.length} reference images. Your task: FUSE/BLEND these images to create: ${request.prompt}
+
+FUSION REQUIREMENTS:
+1. Analyze all ${request.referenceImages.length} reference images
+2. Extract key elements, styles, compositions from each image
+3. Intelligently blend/fuse them into ONE cohesive new image
+4. Maintain the style: ${styleDescription}
+${request.aspectRatio ? `5. Output aspect ratio: ${request.aspectRatio}` : ''}
+
+USER INSTRUCTION: ${request.prompt}
+
+【FUSION RULES - MUST FOLLOW】
+- Study ALL reference images carefully
+- Extract complementary elements from each
+- Create a harmonious blend, not a simple collage
+- Maintain visual coherence and professional quality
+- Follow the user's specific fusion instruction
+
+Style: ${styleDescription}
+Quality: Professional, seamless fusion, high detail`;
+
+      console.log(`🎭 使用多图融合模式: ${request.referenceImages.length}张参考图`);
+    } else if (request.baseImage) {
+      // 单图图生图模式：使用明确的画布编辑指令
       strictPrompt = `[CANVAS EDITING MODE - FILL COMPLETELY]
 
 I am providing a blank canvas. Your job: COMPLETELY FILL this canvas edge-to-edge with: ${request.prompt}
@@ -108,7 +135,6 @@ INSTRUCTION: Paint/draw "${request.prompt}" on the entire canvas. Fill it comple
 Style: ${styleDescription}
 Quality: Professional, detailed, sharp`;
 
-      
       console.log(`🎨 使用画布编辑模式控制比例: ${request.aspectRatio}`);
     } else {
       // 纯文生图模式
@@ -133,15 +159,30 @@ High quality, detailed, professional.`;
       model: settings.model, 
       baseUrl: settings.baseUrl,
       hasBaseImage: !!request.baseImage,
+      multiImageCount: request.referenceImages?.length || 0,  // ✅ 多图数量
       aspectRatio: request.aspectRatio,
-      mode: request.baseImage ? 'image-to-image' : 'text-to-image'
+      mode: (request.referenceImages && request.referenceImages.length > 1) ? 'multi-image-fusion' : (request.baseImage ? 'image-to-image' : 'text-to-image')
     });
 
-    // 🎯 构建消息内容 - 图片在前，文字在后（让AI首先看到画布）
+    // 🎯 构建消息内容 - 图片在前，文字在后（让AI首先看到所有参考）
     const messageContent: Array<{type: string; text?: string; image_url?: {url: string}}> = [];
 
-    // 如果有基础图片，先添加图片（图生图模式）
-    if (request.baseImage) {
+    // ✅ 多图融合模式：先添加所有参考图
+    if (request.referenceImages && request.referenceImages.length > 0) {
+      console.log(`🎭 添加${request.referenceImages.length}张参考图到请求中`);
+      request.referenceImages.forEach((img, index) => {
+        messageContent.push({
+          type: 'image_url',
+          image_url: {
+            url: img
+          }
+        });
+        console.log(`   ├─ 参考图${index + 1}: ${img.substring(0, 30)}...`);
+      });
+      console.log(`   └─ 模式: 多图融合`);
+    }
+    // 单图图生图模式
+    else if (request.baseImage) {
       console.log('📐 添加基础画布到请求中');
       console.log(`   ├─ 比例: ${request.aspectRatio}`);
       console.log(`   ├─ 图片格式: ${request.baseImage.substring(0, 30)}...`);
@@ -162,7 +203,7 @@ High quality, detailed, professional.`;
     });
     
     console.log(`📤 消息内容构建完成:`, {
-      imageFirst: !!request.baseImage,
+      imageCount: messageContent.filter(m => m.type === 'image_url').length,
       contentParts: messageContent.length,
       hasImage: messageContent.some(m => m.type === 'image_url'),
       hasText: messageContent.some(m => m.type === 'text')

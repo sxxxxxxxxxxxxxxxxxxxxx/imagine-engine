@@ -1,353 +1,453 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import WorkspaceLayout from '@/components/WorkspaceLayout';
-import { MODEL_PROVIDERS } from '@/components/SettingsModal';
-import Link from 'next/link';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { ProviderManager } from '@/lib/apiProviders';
+import { 
+  Settings as SettingsIcon, 
+  Image as ImageIcon,
+  MessageSquare,
+  Check,
+  ChevronDown,
+  Download,
+  Upload,
+  RotateCcw,
+  ExternalLink
+} from 'lucide-react';
 
 export default function SettingsPage() {
-  const [selectedProvider, setSelectedProvider] = useState('nano-banana');
-  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash-image-preview');
-  const [apiKey, setApiKey] = useState('');
-  const [customBaseUrl, setCustomBaseUrl] = useState('');
-  const [customModelId, setCustomModelId] = useState('');
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const { language } = useLanguage();
+  const [mounted, setMounted] = useState(false);
+  const [showCustomConfig, setShowCustomConfig] = useState(false);
+  const [showModels, setShowModels] = useState(false);
+  
+  // 自定义配置状态
+  const [customImageEnabled, setCustomImageEnabled] = useState(false);
+  const [customImageUrl, setCustomImageUrl] = useState('');
+  const [customImageKey, setCustomImageKey] = useState('');
+  
+  const [customChatEnabled, setCustomChatEnabled] = useState(false);
+  const [customChatUrl, setCustomChatUrl] = useState('');
+  const [customChatKey, setCustomChatKey] = useState('');
 
-  // 加载保存的设置
   useEffect(() => {
-    const savedProvider = localStorage.getItem('imagine-engine-provider');
-    const savedModel = localStorage.getItem('imagine-engine-model');
-    const savedApiKey = localStorage.getItem('imagine-engine-api-key');
-    const savedBaseUrl = localStorage.getItem('imagine-engine-base-url');
-    const savedCustomModel = localStorage.getItem('imagine-engine-custom-model');
-
-    if (savedProvider) setSelectedProvider(savedProvider);
-    if (savedModel) setSelectedModel(savedModel);
-    if (savedApiKey) setApiKey(savedApiKey);
-    if (savedBaseUrl) setCustomBaseUrl(savedBaseUrl);
-    if (savedCustomModel) setCustomModelId(savedCustomModel);
+    setMounted(true);
+    
+    // 加载自定义配置
+    const loadCustomConfig = () => {
+      setCustomImageEnabled(localStorage.getItem('imagine-engine-custom-image-enabled') === 'true');
+      setCustomImageUrl(localStorage.getItem('imagine-engine-custom-image-url') || '');
+      setCustomImageKey(localStorage.getItem('imagine-engine-custom-image-key') || '');
+      
+      setCustomChatEnabled(localStorage.getItem('imagine-engine-custom-chat-enabled') === 'true');
+      setCustomChatUrl(localStorage.getItem('imagine-engine-custom-chat-url') || '');
+      setCustomChatKey(localStorage.getItem('imagine-engine-custom-chat-key') || '');
+    };
+    loadCustomConfig();
   }, []);
 
-  const currentProvider = MODEL_PROVIDERS.find(p => p.id === selectedProvider);
-
-  const handleSave = () => {
-    if (!apiKey.trim()) {
-      alert('请输入API Key');
-      return;
-    }
-
-    localStorage.setItem('imagine-engine-provider', selectedProvider);
-    localStorage.setItem('imagine-engine-model', selectedModel);
-    localStorage.setItem('imagine-engine-api-key', apiKey);
-    
-    if (selectedProvider === 'custom') {
-      if (!customBaseUrl.trim()) {
-        alert('请输入自定义API地址');
-        return;
-      }
-      localStorage.setItem('imagine-engine-base-url', customBaseUrl);
-      if (customModelId.trim()) {
-        localStorage.setItem('imagine-engine-custom-model', customModelId);
-      }
-    } else {
-      localStorage.setItem('imagine-engine-base-url', currentProvider?.baseUrl || '');
-    }
-
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
-    
-    alert('设置已保存！页面将刷新使设置生效');
-    setTimeout(() => window.location.reload(), 1000);
+  // 保存自定义图片生成配置
+  const handleSaveCustomImage = () => {
+    localStorage.setItem('imagine-engine-custom-image-enabled', 'true');
+    localStorage.setItem('imagine-engine-custom-image-url', customImageUrl);
+    localStorage.setItem('imagine-engine-custom-image-key', customImageKey);
+    setCustomImageEnabled(true);
+    alert(language === 'zh' ? '✅ 自定义图片生成配置已保存！' : '✅ Custom image config saved!');
   };
 
-  const handleClear = () => {
-    if (confirm('确定要清除所有设置吗？')) {
-      localStorage.removeItem('imagine-engine-provider');
-      localStorage.removeItem('imagine-engine-model');
-      localStorage.removeItem('imagine-engine-api-key');
-      localStorage.removeItem('imagine-engine-base-url');
-      localStorage.removeItem('imagine-engine-custom-model');
-      
-      setSelectedProvider('nano-banana');
-      setSelectedModel('gemini-2.5-flash-image-preview');
-      setApiKey('');
-      setCustomBaseUrl('');
-      setCustomModelId('');
-      
-      alert('设置已清除');
+  // 保存自定义聊天配置
+  const handleSaveCustomChat = () => {
+    localStorage.setItem('imagine-engine-custom-chat-enabled', 'true');
+    localStorage.setItem('imagine-engine-custom-chat-url', customChatUrl);
+    localStorage.setItem('imagine-engine-custom-chat-key', customChatKey);
+    setCustomChatEnabled(true);
+    alert(language === 'zh' ? '✅ 自定义AI聊天配置已保存！' : '✅ Custom chat config saved!');
+  };
+
+  // 禁用自定义配置
+  const handleDisableCustomImage = () => {
+    localStorage.setItem('imagine-engine-custom-image-enabled', 'false');
+    setCustomImageEnabled(false);
+    alert(language === 'zh' ? '已切换回默认服务' : 'Switched back to default service');
+  };
+
+  const handleDisableCustomChat = () => {
+    localStorage.setItem('imagine-engine-custom-chat-enabled', 'false');
+    setCustomChatEnabled(false);
+    alert(language === 'zh' ? '已切换回默认服务' : 'Switched back to default service');
+  };
+
+  // 重置为默认
+  const handleReset = () => {
+    if (confirm(language === 'zh' ? '确定要重置所有配置为默认吗？' : 'Reset all configs to default?')) {
+      localStorage.removeItem('imagine-engine-custom-image-enabled');
+      localStorage.removeItem('imagine-engine-custom-image-url');
+      localStorage.removeItem('imagine-engine-custom-image-key');
+      localStorage.removeItem('imagine-engine-custom-chat-enabled');
+      localStorage.removeItem('imagine-engine-custom-chat-url');
+      localStorage.removeItem('imagine-engine-custom-chat-key');
+      window.location.reload();
     }
   };
+
+  // 导出配置
+  const handleExport = () => {
+    const config = {
+      customImage: {
+        enabled: customImageEnabled,
+        url: customImageUrl,
+        key: customImageKey ? '***' : ''  // 密钥脱敏
+      },
+      customChat: {
+        enabled: customChatEnabled,
+        url: customChatUrl,
+        key: customChatKey ? '***' : ''
+      }
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `imagine-engine-config-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (!mounted) return null;
+
+  const imageModels = ['gemini-2.5-flash-image', 'seedream-4.0', 'seedream-4.0-2k', 'seedream-4.0-4k', 'qwen-image'];
 
   return (
-    <WorkspaceLayout>
-      <div className="min-h-screen p-6 max-w-[1800px] mx-auto">
+    <div className="page-container">
+      <div className="content-wrapper max-w-4xl mx-auto">
         {/* 页面标题 */}
         <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>⚙️ 设置</h1>
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                配置API密钥和模型，支持多个主流生图平台
+          <h1 className="text-3xl font-bold text-dark-900 dark:text-dark-50 mb-2">
+            {language === 'zh' ? '设置' : 'Settings'}
+          </h1>
+          <p className="text-dark-600 dark:text-dark-400">
+            {language === 'zh' ? '配置你的 AI 服务' : 'Configure your AI services'}
+          </p>
+        </div>
+
+        {/* 当前使用的服务 */}
+        <div className="space-y-4 mb-6">
+          <h2 className="text-lg font-bold text-dark-900 dark:text-dark-50 flex items-center gap-2">
+            💡 {language === 'zh' ? '当前使用的服务' : 'Current Services'}
+          </h2>
+          
+          {/* 图片生成服务 */}
+          <div className={`card p-5 border-2 ${
+            customImageEnabled 
+              ? 'border-yellow-200 dark:border-yellow-800' 
+              : 'border-green-200 dark:border-green-800'
+          }`}>
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  customImageEnabled 
+                    ? 'bg-yellow-100 dark:bg-yellow-900/30' 
+                    : 'bg-green-100 dark:bg-green-900/30'
+                }`}>
+                  <ImageIcon className={`w-5 h-5 ${
+                    customImageEnabled 
+                      ? 'text-yellow-600 dark:text-yellow-400' 
+                      : 'text-green-600 dark:text-green-400'
+                  }`} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-dark-900 dark:text-dark-50 mb-1">
+                    {language === 'zh' ? '图片生成服务' : 'Image Generation Service'}
+                  </h3>
+                  <p className="text-sm text-dark-600 dark:text-dark-400">
+                    {customImageEnabled ? (
+                      <span className="text-yellow-600 dark:text-yellow-400 font-medium">
+                        🔧 {language === 'zh' ? '使用自定义配置' : 'Using Custom Config'}
+                      </span>
+                    ) : (
+                      <>
+                        Pockgo Image · 
+                        <span className="text-green-600 dark:text-green-400 font-medium ml-1">
+                          <Check className="w-3 h-3 inline" /> {language === 'zh' ? '已就绪' : 'Ready'}
+                        </span>
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="pl-13">
+              <p className="text-sm text-dark-500 mb-2">
+                {language === 'zh' ? '支持模型：' : 'Available models:'} 
+                <span className="font-mono text-xs ml-1">{imageModels.length}</span> 个
+              </p>
+              <button 
+                onClick={() => setShowModels(!showModels)}
+                className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
+              >
+                {showModels ? (language === 'zh' ? '收起模型列表' : 'Hide models') : (language === 'zh' ? '查看所有模型' : 'View all models')}
+                <ChevronDown className={`w-3 h-3 transition-transform ${showModels ? 'rotate-180' : ''}`} />
+              </button>
+              {showModels && (
+                <div className="mt-3 p-3 bg-dark-50 dark:bg-dark-900 rounded-lg">
+                  <ul className="text-xs space-y-1 text-dark-600 dark:text-dark-400">
+                    {imageModels.map(model => (
+                      <li key={model} className="font-mono">• {model}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* AI聊天服务 */}
+          <div className={`card p-5 border-2 ${
+            customChatEnabled 
+              ? 'border-yellow-200 dark:border-yellow-800' 
+              : 'border-blue-200 dark:border-blue-800'
+          }`}>
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  customChatEnabled 
+                    ? 'bg-yellow-100 dark:bg-yellow-900/30' 
+                    : 'bg-blue-100 dark:bg-blue-900/30'
+                }`}>
+                  <MessageSquare className={`w-5 h-5 ${
+                    customChatEnabled 
+                      ? 'text-yellow-600 dark:text-yellow-400' 
+                      : 'text-blue-600 dark:text-blue-400'
+                  }`} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-dark-900 dark:text-dark-50 mb-1">
+                    {language === 'zh' ? 'AI聊天服务' : 'AI Chat Service'}
+                  </h3>
+                  <p className="text-sm text-dark-600 dark:text-dark-400">
+                    {customChatEnabled ? (
+                      <span className="text-yellow-600 dark:text-yellow-400 font-medium">
+                        🔧 {language === 'zh' ? '使用自定义配置' : 'Using Custom Config'}
+                      </span>
+                    ) : (
+                      <>
+                        ModelScope · 
+                        <span className="text-blue-600 dark:text-blue-400 font-medium ml-1">
+                          <Check className="w-3 h-3 inline" /> {language === 'zh' ? '已就绪' : 'Ready'}
+                        </span>
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="pl-13">
+              <p className="text-sm text-dark-500 mb-2">
+                {language === 'zh' ? '当前模型：' : 'Current model:'} 
+                <span className="font-mono text-xs ml-1">DeepSeek V3.1</span>
+              </p>
+              <p className="text-xs text-dark-500">
+                {language === 'zh' ? '用于 AI 助手的智能对话和提示词优化' : 'For AI assistant smart chat and prompt optimization'}
               </p>
             </div>
-            <Link href="/create" className="btn-secondary px-6 py-3">
-              返回创作
-            </Link>
           </div>
         </div>
 
-        {/* Nano Banana 推荐卡片 */}
-        <div className="glass-card p-6 mb-6 border-2 border-purple-300 bg-gradient-to-r from-purple-50/50 to-pink-50/50">
-          <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg">
-              <span className="text-3xl">🍌</span>
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-                  推荐使用 Nano Banana AI
-                </h3>
-                <span className="px-2 py-0.5 rounded-full bg-green-500 text-white text-[10px] font-bold">
-                  顶级
-                </span>
+        {/* 自定义配置（折叠） */}
+        <div className="space-y-4 mb-6">
+          <button
+            onClick={() => setShowCustomConfig(!showCustomConfig)}
+            className="w-full flex items-center justify-between p-4 card hover:border-primary-400 dark:hover:border-primary-500 transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                <SettingsIcon className="w-5 h-5 text-primary-600 dark:text-primary-400" />
               </div>
-              <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
-                基于 Google Gemini 2.5 Flash 的世界级图像生成模型，支持批量生成、角色一致性、场景融合等专业功能。
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="px-2 py-1 rounded-md bg-purple-100 text-purple-700 text-xs font-medium">角色一致性</span>
-                <span className="px-2 py-1 rounded-md bg-blue-100 text-blue-700 text-xs font-medium">批量生成</span>
-                <span className="px-2 py-1 rounded-md bg-green-100 text-green-700 text-xs font-medium">场景融合</span>
+              <div className="text-left">
+                <h2 className="text-base font-bold text-dark-900 dark:text-dark-50">
+                  {language === 'zh' ? '自定义配置（可选）' : 'Custom Configuration (Optional)'}
+                </h2>
+                <p className="text-xs text-dark-500">
+                  {language === 'zh' ? '高级用户可自定义 API 服务' : 'Advanced users can customize API services'}
+                </p>
               </div>
             </div>
+            <ChevronDown className={`w-5 h-5 text-dark-400 transition-transform ${showCustomConfig ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showCustomConfig && (
+            <div className="space-y-4 animate-fadeIn">
+              {/* 自定义图片生成API */}
+              <div className="card p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <ImageIcon className="w-5 h-5 text-primary-500" />
+                  <h3 className="font-semibold text-dark-900 dark:text-dark-50">
+                    {language === 'zh' ? '自定义图片生成 API' : 'Custom Image Generation API'}
+                  </h3>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="form-label mb-2">
+                      {language === 'zh' ? 'API 地址' : 'API Endpoint'}
+                    </label>
+                    <input
+                      type="text"
+                      value={customImageUrl}
+                      onChange={(e) => setCustomImageUrl(e.target.value)}
+                      placeholder="https://your-api.com/v1/images/generations"
+                      className="input text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label mb-2">
+                      {language === 'zh' ? 'API 密钥' : 'API Key'}
+                    </label>
+                    <input
+                      type="password"
+                      value={customImageKey}
+                      onChange={(e) => setCustomImageKey(e.target.value)}
+                      placeholder="sk-..."
+                      className="input text-sm"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    {customImageEnabled ? (
+                      <button 
+                        onClick={handleDisableCustomImage}
+                        className="btn-secondary text-sm flex-1"
+                      >
+                        {language === 'zh' ? '切换回默认服务' : 'Switch to Default'}
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={handleSaveCustomImage}
+                        disabled={!customImageUrl || !customImageKey}
+                        className="btn-primary text-sm flex-1"
+                      >
+                        {language === 'zh' ? '启用自定义配置' : 'Enable Custom Config'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* 自定义AI聊天API */}
+              <div className="card p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <MessageSquare className="w-5 h-5 text-primary-500" />
+                  <h3 className="font-semibold text-dark-900 dark:text-dark-50">
+                    {language === 'zh' ? '自定义 AI 聊天 API' : 'Custom AI Chat API'}
+                  </h3>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="form-label mb-2">
+                      {language === 'zh' ? 'API 地址' : 'API Endpoint'}
+                    </label>
+                    <input
+                      type="text"
+                      value={customChatUrl}
+                      onChange={(e) => setCustomChatUrl(e.target.value)}
+                      placeholder="https://your-api.com/v1/chat/completions"
+                      className="input text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label mb-2">
+                      {language === 'zh' ? 'API 密钥' : 'API Key'}
+                    </label>
+                    <input
+                      type="password"
+                      value={customChatKey}
+                      onChange={(e) => setCustomChatKey(e.target.value)}
+                      placeholder="sk-..."
+                      className="input text-sm"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    {customChatEnabled ? (
+                      <button 
+                        onClick={handleDisableCustomChat}
+                        className="btn-secondary text-sm flex-1"
+                      >
+                        {language === 'zh' ? '切换回默认服务' : 'Switch to Default'}
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={handleSaveCustomChat}
+                        disabled={!customChatUrl || !customChatKey}
+                        className="btn-primary text-sm flex-1"
+                      >
+                        {language === 'zh' ? '启用自定义配置' : 'Enable Custom Config'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 高级选项 */}
+        <div className="card p-5">
+          <h2 className="text-base font-bold text-dark-900 dark:text-dark-50 mb-4">
+            {language === 'zh' ? '高级选项' : 'Advanced Options'}
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            <button onClick={handleExport} className="btn-secondary text-sm">
+              <Download className="w-4 h-4" />
+              {language === 'zh' ? '导出配置' : 'Export Config'}
+            </button>
+            <button onClick={handleReset} className="btn-secondary text-sm">
+              <RotateCcw className="w-4 h-4" />
+              {language === 'zh' ? '重置为默认' : 'Reset to Default'}
+            </button>
+            <a 
+              href="https://github.com/yourusername/imagine-engine" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary text-sm"
+            >
+              <ExternalLink className="w-4 h-4" />
+              {language === 'zh' ? '查看文档' : 'View Docs'}
+            </a>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6 items-start">
-          {/* 左列 - 选择提供商 */}
-          <div className="space-y-4 flex flex-col" style={{ minHeight: '800px' }}>
-            <div className="glass-card p-6">
-              <label className="block text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-                🌐 选择模型提供商
-              </label>
-              <div className="space-y-3">
-                {MODEL_PROVIDERS.map((provider) => (
-                  <button
-                    key={provider.id}
-                    onClick={() => {
-                      setSelectedProvider(provider.id);
-                      if (provider.models.length > 0) {
-                        setSelectedModel(provider.models[0].id);
-                      }
-                    }}
-                    className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
-                      selectedProvider === provider.id
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-transparent hover:border-purple-500/30'
-                    }`}
-                    style={{ background: selectedProvider === provider.id ? undefined : 'var(--bg-tertiary)' }}
-                  >
-                    <div className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                      {provider.name}
-                    </div>
-                    <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                      {provider.models.length} 个模型
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 占位 */}
-            <div className="flex-1"></div>
-          </div>
-
-          {/* 中列 - 选择模型和配置 */}
-          <div className="space-y-4 flex flex-col" style={{ minHeight: '800px' }}>
-            {/* 选择模型 */}
-            <div className="glass-card p-6">
-              <label className="block text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-                🤖 选择模型
-              </label>
-              <div className="space-y-2">
-                {currentProvider?.models.map((model) => (
-                  <button
-                    key={model.id}
-                    onClick={() => setSelectedModel(model.id)}
-                    className={`w-full p-3 rounded-lg border transition-all text-left ${
-                      selectedModel === model.id
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-transparent hover:border-purple-500/30'
-                    }`}
-                    style={{ background: selectedModel === model.id ? undefined : 'var(--bg-tertiary)' }}
-                  >
-                    <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                      {model.name}
-                    </div>
-                    <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                      {model.description}
-                    </div>
-                    <div className="text-xs mt-1 font-mono" style={{ color: 'var(--text-muted)' }}>
-                      {model.id}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* API Key */}
-            <div className="glass-card p-6">
-              <label className="block text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-                🔑 API Key
-              </label>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="请输入您的API密钥..."
-                className="input-glass w-full font-mono"
-              />
-              <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
-                💡 密钥仅保存在浏览器本地，不会上传到服务器
-              </p>
-            </div>
-
-            {/* 自定义配置 */}
-            {selectedProvider === 'custom' && (
-              <>
-                <div className="glass-card p-6">
-                  <label className="block text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-                    🌐 API地址
-                  </label>
-                  <input
-                    type="text"
-                    value={customBaseUrl}
-                    onChange={(e) => setCustomBaseUrl(e.target.value)}
-                    placeholder="https://api.example.com/v1/chat/completions"
-                    className="input-glass w-full font-mono text-sm"
-                  />
-                </div>
-
-                <div className="glass-card p-6">
-                  <label className="block text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-                    🤖 模型ID
-                  </label>
-                  <input
-                    type="text"
-                    value={customModelId}
-                    onChange={(e) => setCustomModelId(e.target.value)}
-                    placeholder="custom-model-name"
-                    className="input-glass w-full font-mono text-sm"
-                  />
-                </div>
-              </>
-            )}
-
-            {/* 占位 */}
-            <div className="flex-1"></div>
-          </div>
-
-          {/* 右列 - 当前配置预览 */}
-          <div className="flex flex-col" style={{ minHeight: '800px' }}>
-            <div className="glass-card p-6 flex-1 flex flex-col">
-              <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-                📋 当前配置
-              </h3>
-              
-              <div className="space-y-4 flex-1">
-                <div className="p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>提供商</span>
-                      <p className="font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
-                        {currentProvider?.name}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>模型</span>
-                      <p className="font-mono text-xs mt-1" style={{ color: 'var(--text-primary)' }}>
-                        {selectedModel}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>API地址</span>
-                      <p className="font-mono text-xs mt-1 break-all" style={{ color: 'var(--text-primary)' }}>
-                        {selectedProvider === 'custom' ? customBaseUrl || '未设置' : currentProvider?.baseUrl}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>格式</span>
-                      <p className="font-semibold mt-1" style={{ color: 'var(--text-primary)' }}>
-                        {currentProvider?.format.toUpperCase()}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>密钥</span>
-                      <p className="mt-1" style={{ color: apiKey ? 'var(--accent-purple)' : 'var(--text-secondary)' }}>
-                        {apiKey ? '✅ 已设置 (******)' : '❌ 未设置'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl" style={{ 
-                  background: 'linear-gradient(135deg, rgba(138, 43, 226, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%)',
-                  border: '1px solid rgba(138, 43, 226, 0.2)'
-                }}>
-                  <h4 className="text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-                    💡 使用说明
-                  </h4>
-                  <ul className="text-xs space-y-2" style={{ color: 'var(--text-secondary)' }}>
-                    <li>• 选择您喜欢的模型提供商</li>
-                    <li>• 输入对应的API密钥</li>
-                    <li>• 点击"保存设置"按钮</li>
-                    <li>• 页面会自动刷新使设置生效</li>
-                  </ul>
-                </div>
-
-                <div className="p-4 rounded-xl" style={{ 
-                  background: 'rgba(34, 197, 94, 0.1)',
-                  border: '1px solid rgba(34, 197, 94, 0.2)'
-                }}>
-                  <h4 className="text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-                    🔒 安全保证
-                  </h4>
-                  <ul className="text-xs space-y-2" style={{ color: 'var(--text-secondary)' }}>
-                    <li>• API密钥仅保存在浏览器本地</li>
-                    <li>• 不会上传到任何服务器</li>
-                    <li>• localStorage加密存储</li>
-                    <li>• 完全由您控制</li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* 操作按钮 */}
-              <div className="space-y-3 mt-6">
-                {saveSuccess && (
-                  <div className="p-3 rounded-lg bg-green-500/20 text-green-600 text-sm text-center">
-                    ✅ 设置保存成功！
-                  </div>
-                )}
-                
-                <button
-                  onClick={handleSave}
-                  className="w-full btn-gradient py-4"
-                >
-                  💾 保存设置
-                </button>
-                
-                <button
-                  onClick={handleClear}
-                  className="w-full btn-secondary py-3"
-                >
-                  🗑️ 清除设置
-                </button>
-              </div>
-            </div>
+        {/* 使用说明 */}
+        <div className="card p-5 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800">
+          <h3 className="font-semibold text-dark-900 dark:text-dark-50 mb-3 flex items-center gap-2">
+            💡 {language === 'zh' ? '使用说明' : 'Instructions'}
+          </h3>
+          <div className="space-y-2 text-sm text-dark-700 dark:text-dark-300">
+            <p>
+              <strong className="text-primary-600 dark:text-primary-400">
+                {language === 'zh' ? '默认服务：' : 'Default Services:'}
+              </strong>
+              {language === 'zh' 
+                ? ' 我们已为您配置好所有服务，开箱即用，无需额外设置。'
+                : ' We have pre-configured all services for you, ready to use out of the box.'}
+            </p>
+            <p>
+              <strong className="text-primary-600 dark:text-primary-400">
+                {language === 'zh' ? '自定义配置：' : 'Custom Config:'}
+              </strong>
+              {language === 'zh' 
+                ? ' 如需使用自己的 API 服务，请展开上方"自定义配置"区域进行设置。'
+                : ' If you need to use your own API services, expand the "Custom Configuration" section above.'}
+            </p>
+            <p>
+              <strong className="text-primary-600 dark:text-primary-400">
+                {language === 'zh' ? '切换服务：' : 'Switch Services:'}
+              </strong>
+              {language === 'zh' 
+                ? ' 启用自定义配置后，系统将优先使用您的 API。可随时切换回默认服务。'
+                : ' After enabling custom config, the system will prioritize your API. You can switch back anytime.'}
+            </p>
           </div>
         </div>
       </div>
-    </WorkspaceLayout>
+    </div>
   );
 }
-

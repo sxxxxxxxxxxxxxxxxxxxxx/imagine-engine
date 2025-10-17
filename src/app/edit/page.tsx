@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import WorkspaceLayout from '@/components/WorkspaceLayout';
+import { useState, useRef, useEffect } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { 
   getImageDimensions, 
   resizeImageToOriginal, 
@@ -9,11 +9,22 @@ import {
   type ImageDimensions 
 } from '@/lib/resolutionKeeper';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { 
+  Upload, 
+  Wand2, 
+  Scissors, 
+  Image as ImageIcon,
+  Download,
+  Eraser,
+  Palette,
+  RefreshCw
+} from 'lucide-react';
 
 type Tool = 'none' | 'inpaint' | 'remove_bg' | 'id_photo';
 type BGColor = 'red' | 'blue' | 'white';
 
 export default function EditPage() {
+  const { language, t } = useLanguage();
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [editedImage, setEditedImage] = useState<string | null>(null);
   const [selectedTool, setSelectedTool] = useState<Tool>('none');
@@ -31,37 +42,33 @@ export default function EditPage() {
   const maskCanvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 🎯 页面加载时检查是否有从创作页面传递过来的图片
+  // 页面加载时检查是否有从创作页面传递过来的图片
   useEffect(() => {
     const imageFromSession = sessionStorage.getItem('edit-image');
     if (imageFromSession) {
       console.log('📎 从创作页面加载图片');
-      // 加载图片并获取尺寸
       getImageDimensions(imageFromSession)
         .then(dimensions => {
           setOriginalDimensions(dimensions);
           setUploadedImage(imageFromSession);
           setProgress(25);
-          // 🎯 自动选择"背景移除"工具，方便用户直接使用
           setSelectedTool('remove_bg');
           console.log(`✅ 图片加载成功: ${dimensions.width}×${dimensions.height}`);
-          console.log(`🔧 已自动选择"背景移除"工具，可直接点击"开始编辑"`);
           
-          // 显示提示信息，告知用户工具已自动选择
           setTimeout(() => {
-            setError('✅ 图片已加载！已为您自动选择"背景移除"工具，您可以直接点击"开始编辑"，或切换到其他工具。');
-            // 3秒后清除提示
+            setError('✅ ' + (language === 'zh' 
+              ? '图片已加载！已自动选择"移除背景"工具，可直接开始编辑。' 
+              : 'Image loaded! "Remove Background" tool auto-selected.'));
             setTimeout(() => setError(null), 5000);
           }, 500);
         })
         .catch(err => {
           console.error('❌ 加载图片失败:', err);
-          setError('无法加载图片');
+          setError(language === 'zh' ? '无法加载图片' : 'Failed to load image');
         });
-      // 清除 sessionStorage
       sessionStorage.removeItem('edit-image');
     }
-  }, []);
+  }, [language]);
 
   // 上传图片
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,7 +77,6 @@ export default function EditPage() {
       const reader = new FileReader();
       reader.onload = async (e) => {
         const dataUrl = e.target?.result as string;
-        
         try {
           const dimensions = await getImageDimensions(dataUrl);
           setOriginalDimensions(dimensions);
@@ -80,7 +86,7 @@ export default function EditPage() {
           setNeedsResizing(false);
           setProgress(25);
         } catch (err) {
-          setError('无法读取图片尺寸');
+          setError(language === 'zh' ? '无法读取图片尺寸' : 'Cannot read image dimensions');
         }
       };
       reader.readAsDataURL(file);
@@ -123,7 +129,6 @@ export default function EditPage() {
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing || selectedTool !== 'inpaint' || !maskCanvasRef.current) return;
-
     const canvas = maskCanvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -132,15 +137,13 @@ export default function EditPage() {
     const x = (e.clientX - rect.left) * (canvas.width / rect.width);
     const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
-    ctx.fillStyle = 'rgba(138, 43, 226, 0.5)';
+    ctx.fillStyle = 'rgba(45, 212, 191, 0.5)'; // 青绿色遮罩
     ctx.beginPath();
     ctx.arc(x, y, brushSize, 0, Math.PI * 2);
     ctx.fill();
   };
 
-  const stopDrawing = () => {
-    setIsDrawing(false);
-  };
+  const stopDrawing = () => setIsDrawing(false);
 
   const clearMask = () => {
     if (maskCanvasRef.current) {
@@ -155,27 +158,26 @@ export default function EditPage() {
   // 处理编辑
   const handleEdit = async () => {
     if (!uploadedImage) {
-      setError('请先上传图片');
+      setError(language === 'zh' ? '请先上传图片' : 'Please upload an image first');
       return;
     }
 
     if (selectedTool === 'none') {
-      setError('请选择编辑工具');
+      setError(language === 'zh' ? '请选择编辑工具' : 'Please select an editing tool');
       return;
     }
 
     if (selectedTool === 'inpaint' && !instruction.trim()) {
-      setError('请输入修复描述');
+      setError(language === 'zh' ? '请输入编辑描述' : 'Please enter edit description');
       return;
     }
 
-    // 获取用户配置
     const apiKey = localStorage.getItem('imagine-engine-api-key') || '';
     const baseUrl = localStorage.getItem('imagine-engine-base-url') || 'https://newapi.aicohere.org/v1/chat/completions';
     const model = localStorage.getItem('imagine-engine-model') || 'gemini-2.5-flash-image-preview';
 
     if (!apiKey) {
-      setError('请先在设置中配置API密钥（点击左侧导航栏"⚙️ 设置"按钮）');
+      setError(language === 'zh' ? '请先配置 API 密钥' : 'Please configure API key in settings');
       return;
     }
 
@@ -184,47 +186,38 @@ export default function EditPage() {
     setProgress(50);
 
     try {
-      // 🎯 修复：处理 HTTP URL 和 Data URL 两种格式
       let imageBase64 = '';
       
       if (uploadedImage.startsWith('data:')) {
-        // Data URL 格式：直接提取 base64 部分
         imageBase64 = uploadedImage.split(',')[1];
-        console.log('📷 使用 Data URL 格式图片');
+        console.log('📷 使用 Data URL 格式');
       } else if (uploadedImage.startsWith('http')) {
-        // HTTP URL 格式：需要先下载并转换为 base64
-        console.log('🌐 检测到 HTTP URL，正在下载并转换...');
-        try {
-          const response = await fetch(uploadedImage);
-          const blob = await response.blob();
-          const dataUrl = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
-          imageBase64 = dataUrl.split(',')[1];
-          console.log('✅ HTTP URL 已转换为 base64');
-        } catch (err) {
-          throw new Error('无法下载图片，请重新上传');
-        }
+        console.log('🌐 转换 HTTP URL...');
+        const response = await fetch(uploadedImage);
+        const blob = await response.blob();
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        imageBase64 = dataUrl.split(',')[1];
+        console.log('✅ 转换完成');
       } else {
-        throw new Error('不支持的图片格式');
+        throw new Error(language === 'zh' ? '不支持的图片格式' : 'Unsupported image format');
       }
       
       if (!imageBase64) {
-        throw new Error('图片数据为空，请重新上传');
+        throw new Error(language === 'zh' ? '图片数据为空' : 'Image data is empty');
       }
       
       let maskBase64 = '';
-
       if (selectedTool === 'inpaint' && maskCanvasRef.current) {
         const maskDataUrl = maskCanvasRef.current.toDataURL('image/png');
         maskBase64 = maskDataUrl.split(',')[1];
       }
 
       setProgress(75);
-      console.log(`📤 准备发送编辑请求: 工具=${selectedTool}, 图片数据长度=${imageBase64.length}`);
 
       const response = await fetch('/api/edit', {
         method: 'POST',
@@ -243,43 +236,29 @@ export default function EditPage() {
       });
 
       const data = await response.json();
-
-      if (!response.ok) throw new Error(data.error || '编辑失败');
+      if (!response.ok) throw new Error(data.error || 'Edit failed');
 
       if (data.imageUrl) {
         if (originalDimensions) {
           try {
-            console.log('📐 检查编辑后图片尺寸...');
             const editedDimensions = await getImageDimensions(data.imageUrl);
-            console.log(`原始尺寸: ${originalDimensions.width}×${originalDimensions.height}`);
-            console.log(`编辑后尺寸: ${editedDimensions.width}×${editedDimensions.height}`);
             
-            if (
-              editedDimensions.width !== originalDimensions.width ||
-              editedDimensions.height !== originalDimensions.height
-            ) {
-              console.log('⚠️ 尺寸不匹配，开始调整...');
+            if (editedDimensions.width !== originalDimensions.width || editedDimensions.height !== originalDimensions.height) {
               setNeedsResizing(true);
-              
               const resizedImageUrl = await resizeImageToOriginal(
                 data.imageUrl,
                 originalDimensions.width,
                 originalDimensions.height
               );
-              
-              console.log('✅ 图片已调整到原始尺寸');
               setEditedImage(resizedImageUrl);
               setNeedsResizing(false);
             } else {
-              console.log('✅ 尺寸已匹配，无需调整');
               setEditedImage(data.imageUrl);
             }
           } catch (err) {
-            console.error('❌ 尺寸调整失败，使用原图:', err);
             setEditedImage(data.imageUrl);
           }
         } else {
-          console.log('⚠️ 无原始尺寸信息，直接使用编辑结果');
           setEditedImage(data.imageUrl);
         }
         
@@ -287,7 +266,7 @@ export default function EditPage() {
         clearMask();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '编辑失败');
+      setError(err instanceof Error ? err.message : (language === 'zh' ? '编辑失败' : 'Edit failed'));
       setProgress(0);
     } finally {
       setIsProcessing(false);
@@ -296,42 +275,81 @@ export default function EditPage() {
 
   const handleDownload = async (imageUrl: string) => {
     try {
-      await downloadWithOriginalResolution(
-        imageUrl,
-        originalDimensions || undefined,
-        `edited-${Date.now()}.png`
-      );
-      // 下载成功提示
-      console.log('✅ 图片下载成功');
+      await downloadWithOriginalResolution(imageUrl, originalDimensions || undefined, `edited-${Date.now()}.png`);
+      console.log('✅ 下载成功');
     } catch (error) {
-      // 下载失败时显示错误提示，而不是打开新窗口
-      const errorMessage = error instanceof Error ? error.message : '下载失败，请重试';
+      const errorMessage = error instanceof Error ? error.message : (language === 'zh' ? '下载失败' : 'Download failed');
       setError(errorMessage);
       console.error('❌ 下载失败:', errorMessage);
     }
   };
 
-  // 🎯 添加快捷键支持
   useKeyboardShortcuts({
     onGenerate: handleEdit,
     isGenerating: isProcessing
   });
 
+  const tools = [
+    { 
+      id: 'inpaint' as Tool, 
+      icon: Wand2,
+      name: language === 'zh' ? '智能修复' : 'Inpaint',
+      desc: language === 'zh' ? '涂抹区域并描述修改' : 'Paint area and describe'
+    },
+    { 
+      id: 'remove_bg' as Tool, 
+      icon: Scissors,
+      name: language === 'zh' ? '移除背景' : 'Remove BG',
+      desc: language === 'zh' ? '一键生成透明背景' : 'One-click transparent'
+    },
+    { 
+      id: 'id_photo' as Tool, 
+      icon: ImageIcon,
+      name: language === 'zh' ? '证件照' : 'ID Photo',
+      desc: language === 'zh' ? '更换背景颜色' : 'Change background'
+    },
+  ];
+
   return (
-    <WorkspaceLayout>
-      <div className="min-h-screen p-6 max-w-[1800px] mx-auto">
-        {/* 页面标题 */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>🔧 AI 编辑</h1>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>智能图片编辑，保持原图分辨率</p>
+    <div className="page-container">
+      <div className="content-wrapper">
+        {/* 页面标题与提示 */}
+        <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-dark-900 dark:text-dark-50">
+              Editor
+            </h1>
+            <p className="text-sm text-dark-600 dark:text-dark-400 mt-1">
+              {language === 'zh' ? '专业图片编辑工具' : 'Professional image editing tool'}
+            </p>
+          </div>
+          
+          {/* 右侧提示信息 */}
+          <div className="hidden lg:flex items-center gap-6 text-sm text-dark-600 dark:text-dark-400">
+            <div className="flex items-center gap-2">
+              <span>💡</span>
+              <span>{language === 'zh' ? '上传图片后选择工具' : 'Upload then select tool'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span>⌨️</span>
+              <span>{language === 'zh' ? 'Ctrl+Enter 快速执行' : 'Ctrl+Enter to execute'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span>📐</span>
+              <span>{language === 'zh' ? '保持原始分辨率' : 'Original resolution'}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6 items-start">
-          {/* 左侧 - 控制面板 */}
-          <div className="space-y-4 flex flex-col" style={{ minHeight: '800px' }}>
+        <div className="grid lg:grid-cols-24 gap-4">
+          {/* 左侧：工具栏（6/24 = 25%） */}
+          <div className="col-span-24 lg:col-span-6 space-y-4">
             {/* 上传图片 */}
-            <div className="glass-card p-4">
-              <label className="block font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>📤 上传图片</label>
+            <div className="card p-6">
+              <label className="form-label flex items-center gap-2 mb-3">
+                <Upload className="w-4 h-4 text-primary-500" />
+                {language === 'zh' ? '上传图片' : 'Upload Image'}
+              </label>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -341,108 +359,70 @@ export default function EditPage() {
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full p-6 border-2 border-dashed rounded-xl hover:border-purple-500 transition-colors"
-                style={{ borderColor: 'var(--border-medium)' }}
+                className="w-full p-6 border-2 border-dashed border-dark-300 dark:border-dark-700 rounded-lg hover:border-primary-400 dark:hover:border-primary-500 transition-colors text-center"
               >
-                <div className="text-center">
-                  <span className="text-4xl">📁</span>
-                  <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>点击上传图片</p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>支持 JPG、PNG、WEBP</p>
-                </div>
+                <Upload className="w-8 h-8 text-dark-400 mx-auto mb-2" />
+                <p className="text-sm text-dark-600 dark:text-dark-400">
+                  {language === 'zh' ? '点击上传' : 'Click to upload'}
+                </p>
+                <p className="text-xs text-dark-500 mt-1">
+                  JPG, PNG, WEBP
+                </p>
               </button>
 
-              {/* 缩略图预览 */}
-              {uploadedImage && (
-                <div className="mt-4 p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={uploadedImage}
-                      alt="预览"
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    <div className="flex-1">
-                      <div className="text-xs font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                        已上传
-                      </div>
-                      {originalDimensions && (
-                        <div className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
-                          📐 {originalDimensions.width} × {originalDimensions.height} px
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => {
-                        setUploadedImage(null);
-                        setEditedImage(null);
-                        setOriginalDimensions(null);
-                        setSelectedTool('none');
-                        setProgress(0);
-                      }}
-                      className="text-red-500 hover:text-red-600"
-                    >
-                      ✕
-                    </button>
+              {uploadedImage && originalDimensions && (
+                <div className="mt-3 p-3 bg-dark-50 dark:bg-dark-900 rounded-lg">
+                  <div className="flex justify-between text-xs text-dark-600 dark:text-dark-400">
+                    <span>{language === 'zh' ? '尺寸' : 'Size'}:</span>
+                    <span className="font-mono">{originalDimensions.width}×{originalDimensions.height}</span>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* 编辑工具 */}
-            <div className="glass-card p-4">
-              <label className="block font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>🛠️ 选择工具</label>
+            {/* 选择工具 */}
+            <div className="card p-6">
+              <label className="form-label mb-3">
+                {language === 'zh' ? '选择工具' : 'Select Tool'}
+              </label>
               <div className="space-y-2">
-                <button
-                  onClick={() => setSelectedTool('inpaint')}
-                  disabled={!uploadedImage}
-                  className={`w-full tool-btn ${selectedTool === 'inpaint' ? 'active' : ''} ${!uploadedImage ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">🎨</span>
-                    <div className="text-left">
-                      <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>智能修复</div>
-                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>涂抹区域并描述修改</div>
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setSelectedTool('remove_bg')}
-                  disabled={!uploadedImage}
-                  className={`w-full tool-btn ${selectedTool === 'remove_bg' ? 'active' : ''} ${!uploadedImage ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">✂️</span>
-                    <div className="text-left">
-                      <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>背景移除</div>
-                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>一键生成透明背景</div>
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setSelectedTool('id_photo')}
-                  disabled={!uploadedImage}
-                  className={`w-full tool-btn ${selectedTool === 'id_photo' ? 'active' : ''} ${!uploadedImage ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">📸</span>
-                    <div className="text-left">
-                      <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>证件照换背景</div>
-                      <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>红蓝白三色背景</div>
-                    </div>
-                  </div>
-                </button>
+                {tools.map((tool) => {
+                  const Icon = tool.icon;
+                  const isActive = selectedTool === tool.id;
+                  return (
+                    <button
+                      key={tool.id}
+                      onClick={() => setSelectedTool(tool.id)}
+                      disabled={!uploadedImage}
+                      className={`w-full p-3 rounded-lg text-left transition-all ${
+                        isActive
+                          ? 'bg-primary-50 dark:bg-primary-900/20 border-2 border-primary-400 dark:border-primary-500'
+                          : 'bg-dark-50 dark:bg-dark-900 border-2 border-transparent hover:border-dark-300 dark:hover:border-dark-700'
+                      } ${!uploadedImage ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className={`w-5 h-5 ${isActive ? 'text-primary-600 dark:text-primary-400' : 'text-dark-600 dark:text-dark-400'}`} />
+                        <div>
+                          <div className={`font-medium ${isActive ? 'text-primary-700 dark:text-primary-300' : 'text-dark-900 dark:text-dark-100'}`}>
+                            {tool.name}
+                          </div>
+                          <div className="text-xs text-dark-500">{tool.desc}</div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* 工具设置 */}
+            {/* 工具参数 */}
             {selectedTool === 'inpaint' && (
-              <div className="glass-card p-4">
-                <label className="block font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>⚙️ 修复设置</label>
+              <div className="card p-6">
+                <label className="form-label mb-3">{language === 'zh' ? '修复设置' : 'Inpaint Settings'}</label>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
-                      画笔大小: {brushSize}px
+                    <label className="form-label mb-2">
+                      {language === 'zh' ? '画笔大小' : 'Brush Size'}: {brushSize}px
                     </label>
                     <input
                       type="range"
@@ -450,245 +430,185 @@ export default function EditPage() {
                       max="50"
                       value={brushSize}
                       onChange={(e) => setBrushSize(Number(e.target.value))}
-                      className="w-full"
+                      className="w-full accent-primary-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>修复描述</label>
+                    <label className="form-label mb-2">
+                      {language === 'zh' ? '编辑描述' : 'Description'}
+                    </label>
                     <textarea
                       value={instruction}
                       onChange={(e) => setInstruction(e.target.value)}
-                      onKeyDown={(e) => {
-                        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                          e.preventDefault();
-                          // 此时 selectedTool 已是 'inpaint'，直接检查其他条件
-                          if (uploadedImage && !isProcessing) {
-                            handleEdit();
-                          }
-                        }
-                      }}
-                      placeholder="描述你想要的修改效果...（Ctrl+Enter快速执行）"
-                      className="textarea-glass h-20 text-sm"
+                      placeholder={language === 'zh' ? '描述你想要的修改效果...' : 'Describe the changes...'}
+                      className="textarea h-20"
                     />
                   </div>
-                  <button
-                    onClick={clearMask}
-                    className="w-full btn-secondary py-2 text-sm"
-                  >
-                    🔄 清除遮罩
+                  <button onClick={clearMask} className="btn-secondary w-full text-sm">
+                    <Eraser className="w-4 h-4" />
+                    {language === 'zh' ? '清除遮罩' : 'Clear Mask'}
                   </button>
                 </div>
               </div>
             )}
 
             {selectedTool === 'id_photo' && (
-              <div className="glass-card p-4">
-                <label className="block font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>🎨 背景颜色</label>
+              <div className="card p-6">
+                <label className="form-label mb-3">
+                  <Palette className="w-4 h-4 inline mr-1" />
+                  {language === 'zh' ? '背景颜色' : 'Background Color'}
+                </label>
                 <div className="grid grid-cols-3 gap-2">
                   {(['red', 'blue', 'white'] as BGColor[]).map((color) => (
                     <button
                       key={color}
                       onClick={() => setIdPhotoBG(color)}
-                      className={`p-3 rounded-xl border-2 transition-all ${
-                        idPhotoBG === color ? 'border-purple-500 ring-2 ring-purple-500/50' : ''
+                      className={`p-3 rounded-lg border-2 transition-all ${
+                        idPhotoBG === color 
+                          ? 'border-primary-400 dark:border-primary-500 ring-2 ring-primary-400/50' 
+                          : 'border-dark-200 dark:border-dark-800'
                       }`}
-                      style={idPhotoBG !== color ? { borderColor: 'var(--border-medium)' } : undefined}
                     >
-                      <div
-                        className={`w-full h-12 rounded-lg mb-2 ${
-                          color === 'red' ? 'bg-red-500' :
-                          color === 'blue' ? 'bg-blue-500' :
-                          'bg-white border border-gray-300'
-                        }`}
-                      />
-                      <div className="text-xs capitalize" style={{ color: 'var(--text-primary)' }}>{color}</div>
+                      <div className={`w-full h-12 rounded ${
+                        color === 'red' ? 'bg-red-500' :
+                        color === 'blue' ? 'bg-blue-500' :
+                        'bg-white border border-dark-300'
+                      }`} />
+                      <div className="text-xs text-center mt-2 capitalize text-dark-700 dark:text-dark-300">
+                        {color}
+                      </div>
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* 生成按钮 */}
+            {/* 开始编辑按钮 */}
             <button
               onClick={handleEdit}
               disabled={!uploadedImage || selectedTool === 'none' || isProcessing}
-              className="w-full btn-gradient py-4"
+              className="btn-primary w-full py-3"
             >
               {isProcessing ? (
-                <span className="flex items-center justify-center">
-                  <div className="loading-spinner mr-3" />
-                  AI 正在处理中...
-                </span>
+                <>
+                  <div className="loading-spinner" />
+                  {language === 'zh' ? '处理中...' : 'Processing...'}
+                </>
               ) : (
-                '✨ 开始编辑'
+                <>
+                  <Wand2 className="w-5 h-5" />
+                  {language === 'zh' ? '开始编辑' : 'Start Editing'}
+                </>
               )}
             </button>
 
-            {/* 🎯 友好提示：未选择工具时 */}
+            {/* 提示信息 */}
             {uploadedImage && selectedTool === 'none' && !isProcessing && (
-              <div className="glass-card p-4 border-2 border-yellow-500/50 bg-yellow-50/50">
-                <p className="text-yellow-700 text-sm">💡 请先选择一个编辑工具（智能修复、背景移除或证件照换背景）</p>
-              </div>
-            )}
-
-            {error && (
-              <div className={`glass-card p-4 border-2 ${
-                error.startsWith('✅') 
-                  ? 'border-green-500/50 bg-green-50/50' 
-                  : 'border-red-500/50'
-              }`}>
-                <p className={`text-sm ${
-                  error.startsWith('✅') 
-                    ? 'text-green-700' 
-                    : 'text-red-400'
-                }`}>
-                  {error.startsWith('✅') ? error : `⚠️ ${error}`}
+              <div className="card p-3 border-2 border-accent-200 dark:border-accent-800 bg-accent-50 dark:bg-accent-900/20">
+                <p className="text-sm text-accent-700 dark:text-accent-300">
+                  💡 {language === 'zh' ? '请先选择编辑工具' : 'Please select a tool first'}
                 </p>
               </div>
             )}
 
-            {/* 占位区域 - 确保左列和其他列等高 */}
-            <div className="flex-1"></div>
+            {error && (
+              <div className={`card p-3 border-2 ${
+                error.startsWith('✅') 
+                  ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20' 
+                  : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
+              }`}>
+                <p className={`text-sm ${
+                  error.startsWith('✅') 
+                    ? 'text-green-700 dark:text-green-300' 
+                    : 'text-red-700 dark:text-red-300'
+                }`}>
+                  {error}
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* 中间 - 编辑画布 */}
-          <div className="flex flex-col">
-            <div className="glass-card p-4 flex flex-col" style={{ minHeight: '800px' }}>
-              {/* 进度条 */}
+          {/* 中间：原图区域（9/24 = 37.5%） */}
+          <div className="col-span-24 lg:col-span-9">
+            <div className="card p-6">
+              <div className="flex items-center justify-between mb-4">
+                <label className="form-label mb-0">
+                  {language === 'zh' ? '原图' : 'Original'}
+                </label>
+                {progress > 0 && (
+                  <span className="text-xs text-dark-500">{progress}%</span>
+                )}
+              </div>
+
               {progress > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-                      处理进度
-                    </span>
-                    <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
-                      {progress}%
-                    </span>
-                  </div>
-                  <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div 
-                      className="h-full bg-gradient-primary transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-                    <span>📤 上传</span>
-                    <span>⚙️ 处理</span>
-                    <span>🎨 生成</span>
-                    <span>✅ 完成</span>
-                  </div>
+                <div className="progress-bar mb-4">
+                  <div className="progress-fill" style={{ width: `${progress}%` }} />
                 </div>
               )}
 
-              {/* 原图显示 */}
-              <div className="flex-1 flex flex-col">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    📷 原图
-                  </span>
-                  {originalDimensions && (
-                    <span className="text-xs font-mono px-2 py-1 rounded" style={{
-                      background: 'rgba(59, 130, 246, 0.1)',
-                      color: '#3b82f6'
-                    }}>
-                      {originalDimensions.width} × {originalDimensions.height}
-                    </span>
+              {uploadedImage ? (
+                <div className="relative bg-dark-50 dark:bg-dark-900 rounded-lg overflow-hidden min-h-[400px] max-h-[70vh] flex items-center justify-center">
+                  <canvas
+                    ref={canvasRef}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                  {selectedTool === 'inpaint' && (
+                    <canvas
+                      ref={maskCanvasRef}
+                      onMouseDown={startDrawing}
+                      onMouseMove={draw}
+                      onMouseUp={stopDrawing}
+                      onMouseLeave={stopDrawing}
+                      className="absolute inset-0 w-full h-full cursor-crosshair"
+                    />
                   )}
                 </div>
-                
-                {uploadedImage ? (
-                  <div className="relative rounded-xl overflow-hidden flex-1 flex items-center justify-center" style={{ background: 'var(--bg-tertiary)' }}>
-                    <canvas
-                      ref={canvasRef}
-                      className="w-full h-auto"
-                      style={{ display: 'block' }}
-                    />
-                    {selectedTool === 'inpaint' && (
-                      <canvas
-                        ref={maskCanvasRef}
-                        onMouseDown={startDrawing}
-                        onMouseMove={draw}
-                        onMouseUp={stopDrawing}
-                        onMouseLeave={stopDrawing}
-                        className="absolute inset-0 w-full h-full cursor-crosshair"
-                        style={{ display: 'block' }}
-                      />
-                    )}
+              ) : (
+                <div className="bg-dark-50 dark:bg-dark-900 rounded-lg min-h-[400px] max-h-[70vh] flex items-center justify-center">
+                  <div className="text-center">
+                    <ImageIcon className="w-12 h-12 text-dark-400 mx-auto mb-2" />
+                    <p className="text-sm text-dark-600 dark:text-dark-400">
+                      {language === 'zh' ? '上传图片后显示' : 'Upload to preview'}
+                    </p>
                   </div>
-                ) : (
-                  <div className="flex items-center justify-center flex-1 rounded-xl border-2 border-dashed" style={{ borderColor: 'var(--border-subtle)', minHeight: '400px' }}>
-                    <div className="text-center">
-                      <span className="text-4xl">📸</span>
-                      <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>上传图片后显示</p>
-                    </div>
-                  </div>
-                )}
-                
-                {selectedTool === 'inpaint' && uploadedImage && (
-                  <div className="mt-2 text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
-                    💡 在需要修复的区域涂抹紫色遮罩
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* 右侧 - 编辑结果 */}
-          <div className="flex flex-col">
-            <div className="glass-card p-4 flex flex-col" style={{ minHeight: '800px' }}>
+          {/* 右侧：编辑结果区域（9/24 = 37.5%） */}
+          <div className="col-span-24 lg:col-span-9">
+            <div className="card p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    ✨ 编辑结果
-                  </span>
-                  {needsResizing && (
-                    <span className="text-xs px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-600">
-                      ⏳ 调整中
-                    </span>
-                  )}
-                  {originalDimensions && !needsResizing && editedImage && (
-                    <span className="text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-600">
-                      ✅ 无损
-                    </span>
-                  )}
-                </div>
+                <label className="form-label mb-0">
+                  {language === 'zh' ? '编辑结果' : 'Edited Result'}
+                </label>
                 {editedImage && (
-                  <button
-                    onClick={() => handleDownload(editedImage)}
-                    className="btn-gradient px-4 py-2 text-sm"
-                  >
-                    💾 下载
+                  <button onClick={() => handleDownload(editedImage)} className="btn-primary text-sm">
+                    <Download className="w-4 h-4" />
+                    {language === 'zh' ? '下载' : 'Download'}
                   </button>
                 )}
               </div>
 
-              <div className="flex-1 flex flex-col">
-                {editedImage ? (
-                  <div className="rounded-xl overflow-hidden flex-1 flex items-center justify-center" style={{ background: 'var(--bg-tertiary)' }}>
-                    <img
-                      src={editedImage}
-                      alt="编辑结果"
-                      className="w-full h-auto"
-                    />
+              {editedImage ? (
+                <div className="bg-dark-50 dark:bg-dark-900 rounded-lg overflow-hidden min-h-[400px] max-h-[70vh] flex items-center justify-center">
+                  <img src={editedImage} alt="Result" className="max-w-full max-h-full object-contain" />
+                </div>
+              ) : (
+                <div className="bg-dark-50 dark:bg-dark-900 rounded-lg min-h-[400px] max-h-[70vh] flex items-center justify-center">
+                  <div className="text-center">
+                    <Wand2 className="w-12 h-12 text-dark-400 mx-auto mb-2" />
+                    <p className="text-sm text-dark-600 dark:text-dark-400">
+                      {language === 'zh' ? '编辑结果将在这里显示' : 'Result will appear here'}
+                    </p>
                   </div>
-                ) : (
-                  <div className="flex items-center justify-center flex-1 rounded-xl border-2 border-dashed" style={{ borderColor: 'var(--border-subtle)', minHeight: '400px' }}>
-                    <div className="text-center">
-                      <span className="text-5xl">✨</span>
-                      <p className="text-sm mt-4" style={{ color: 'var(--text-primary)' }}>
-                        编辑结果将在这里显示
-                      </p>
-                      <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
-                        选择工具并点击"开始编辑"
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
-    </WorkspaceLayout>
+    </div>
   );
 }

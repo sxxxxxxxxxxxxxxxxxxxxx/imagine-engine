@@ -12,7 +12,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('light'); // 默认浅色
+  const [theme, setTheme] = useState<Theme>('dark'); // 默认深色模式
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -21,6 +21,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const savedTheme = localStorage.getItem('theme') as Theme;
     if (savedTheme) {
       setTheme(savedTheme);
+    } else {
+      // 首次访问，设置默认深色
+      localStorage.setItem('theme', 'dark');
+      document.documentElement.classList.add('dark');
     }
   }, []);
 
@@ -28,8 +32,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (mounted) {
       // 保存到 localStorage
       localStorage.setItem('theme', theme);
-      // 更新 HTML 属性
-      document.documentElement.setAttribute('data-theme', theme);
+      // 更新 HTML class（Tailwind 使用 class 而非 data-theme）
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      console.log(`🎨 主题已切换到: ${theme}`);
     }
   }, [theme, mounted]);
 
