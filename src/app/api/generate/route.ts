@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateImage } from '@/lib/bananaApi';
 
+// 增加请求体大小限制（支持多图上传）
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',  // 增加到10MB，支持多张高清图片
+    },
+  },
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
