@@ -264,6 +264,50 @@ export default function CreatePage() {
     { id: 'minimalist', name: language === 'zh' ? '极简' : 'Minimal', icon: '⚪' },
   ];
 
+  // 压缩图片函数（避免base64过大）
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // 如果图片过大，压缩到最大1920px
+          const maxSize = 1920;
+          if (width > maxSize || height > maxSize) {
+            if (width > height) {
+              height = (height / width) * maxSize;
+              width = maxSize;
+            } else {
+              width = (width / height) * maxSize;
+              height = maxSize;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            // 压缩质量0.8，减小文件大小
+            const compressed = canvas.toDataURL('image/jpeg', 0.8);
+            console.log(`🗜️ 图片压缩: ${Math.round(e.target?.result.toString().length / 1024)}KB → ${Math.round(compressed.length / 1024)}KB`);
+            resolve(compressed);
+          } else {
+            reject(new Error('Canvas context creation failed'));
+          }
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   // 处理多文件上传
   const handleReferenceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).filter(file => 
@@ -282,20 +326,11 @@ export default function CreatePage() {
       return;
     }
     
-    // 读取所有文件 - 使用Promise.all确保所有文件都被正确读取
-    const fileReaders = files.map(file => {
-      return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    });
-    
+    // 压缩并读取所有文件
     try {
-      const dataUrls = await Promise.all(fileReaders);
-      setReferenceImages(prev => [...prev, ...dataUrls]);
-      console.log(`📎 成功上传${dataUrls.length}张参考图`);
+      const compressedImages = await Promise.all(files.map(file => compressImage(file)));
+      setReferenceImages(prev => [...prev, ...compressedImages]);
+      console.log(`📎 成功上传并压缩${compressedImages.length}张参考图`);
     } catch (err) {
       console.error('❌ 文件读取失败:', err);
       setError(language === 'zh' ? '文件读取失败' : 'Failed to read files');
@@ -406,20 +441,11 @@ export default function CreatePage() {
       return;
     }
     
-    // 使用Promise.all确保所有文件都被正确读取
-    const fileReaders = files.map(file => {
-      return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    });
-    
+    // 压缩并读取所有文件
     try {
-      const dataUrls = await Promise.all(fileReaders);
-      setReferenceImages(prev => [...prev, ...dataUrls]);
-      console.log(`📎 成功拖入${dataUrls.length}张参考图`);
+      const compressedImages = await Promise.all(files.map(file => compressImage(file)));
+      setReferenceImages(prev => [...prev, ...compressedImages]);
+      console.log(`📎 成功拖入并压缩${compressedImages.length}张参考图`);
     } catch (err) {
       console.error('❌ 文件读取失败:', err);
       setError(language === 'zh' ? '文件读取失败' : 'Failed to read files');
