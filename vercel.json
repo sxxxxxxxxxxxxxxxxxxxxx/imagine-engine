@@ -3,5 +3,19 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["sin1"]
+  "regions": ["sin1"],
+  "functions": {
+    "api/generate.ts": {
+      "maxDuration": 60,
+      "memory": 3008
+    },
+    "api/edit.ts": {
+      "maxDuration": 60,
+      "memory": 3008
+    },
+    "api/chat.ts": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  }
 }

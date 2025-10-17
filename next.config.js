@@ -1,11 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // API路由配置
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',  // 支持多图上传，增加请求体限制
-    },
-  },
   images: {
     // 限制图片域名白名单，提升安全性
     remotePatterns: [
