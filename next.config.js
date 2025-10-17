@@ -49,8 +49,6 @@ const nextConfig = {
   },
   // 性能优化
   experimental: {
-    // 优化CSS
-    optimizeCss: true,
     // 优化包导入
     optimizePackageImports: ['lucide-react', 'react-markdown'],
   },
