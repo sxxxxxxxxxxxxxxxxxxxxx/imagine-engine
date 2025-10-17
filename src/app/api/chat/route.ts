@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// App Router配置
+export const runtime = 'nodejs';
+export const maxDuration = 30;
+
 const API_BASE_URL = process.env.NANO_BANANA_BASE_URL || 'https://newapi.aicohere.org/v1/chat/completions';
 const IMAGE_API_BASE_URL = process.env.IMAGE_API_BASE_URL || 'https://newapi.pockgo.com/v1/chat/completions';
 const API_KEY = process.env.NANO_BANANA_API_KEY;

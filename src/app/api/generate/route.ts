@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateImage } from '@/lib/bananaApi';
 
-// 增加请求体大小限制（支持多图上传）
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',  // 增加到10MB，支持多张高清图片
-    },
-  },
-};
+// App Router配置（增加函数超时和内存）
+export const runtime = 'nodejs';
+export const maxDuration = 60;  // 60秒超时
 
 export async function POST(request: NextRequest) {
   try {

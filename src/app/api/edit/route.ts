@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { editImage } from '@/lib/bananaApi';
 
+// App Router配置
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
