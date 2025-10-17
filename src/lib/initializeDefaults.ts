@@ -8,47 +8,49 @@ import { ProviderManager } from './apiProviders';
 export function initializeDefaultConfig() {
   if (typeof window === 'undefined') return;
 
-  // 检查是否已初始化
-  const initialized = localStorage.getItem('imagine-engine-initialized');
-  if (initialized === 'true') return;
+  console.log('🔧 检查API配置...');
 
-  console.log('🔧 初始化默认API配置...');
-
-  const keys = ProviderManager.getAllApiKeys();
-
-  // 填充核心Provider的API密钥
-  if (!keys['pockgo-image']) {
-    ProviderManager.setApiKey('pockgo-image', 'sk-C358zCIUzlUZ7daJl4PEtu6njZz7g7k3luAWRqpS64gi0pjs');
-    console.log('✅ Pockgo Image API密钥已配置');
+  // 简化逻辑：直接检查和设置核心配置
+  const apiKey = localStorage.getItem('imagine-engine-api-key');
+  
+  if (!apiKey) {
+    // 设置默认API密钥（Pockgo Image）
+    localStorage.setItem('imagine-engine-api-key', 'sk-C358zCIUzlUZ7daJl4PEtu6njZz7g7k3luAWRqpS64gi0pjs');
+    console.log('✅ 默认API密钥已配置');
   }
 
-  if (!keys['modelscope']) {
-    ProviderManager.setApiKey('modelscope', 'ms-68b498a8-97d5-4fef-9329-15587817422f');
-    console.log('✅ ModelScope API密钥已配置');
-  }
-
-  // 填充可选Provider的API密钥
-  if (!keys['google-official']) {
-    ProviderManager.setApiKey('google-official', 'AIzaSyDt-c_vKjr4HDYRnttjzdWWjThCF-Qw6cc');
-    console.log('✅ Google Gemini API密钥已配置');
-  }
-
-  // 设置默认激活Provider
-  const activeProvider = ProviderManager.getActiveProvider();
-  if (!activeProvider) {
-    ProviderManager.setActiveProvider('pockgo-image');
-    console.log('✅ 默认Provider设置为 Pockgo Image');
+  // 设置默认API地址
+  const baseUrl = localStorage.getItem('imagine-engine-base-url');
+  if (!baseUrl) {
+    localStorage.setItem('imagine-engine-base-url', 'https://newapi.pockgo.com/v1/chat/completions');
+    console.log('✅ 默认API地址已配置');
   }
 
   // 设置默认模型
-  const currentModel = localStorage.getItem('imagine-engine-model');
-  if (!currentModel) {
+  const model = localStorage.getItem('imagine-engine-model');
+  if (!model) {
     localStorage.setItem('imagine-engine-model', 'gemini-2.5-flash-image');
-    console.log('✅ 默认模型设置为 gemini-2.5-flash-image');
+    console.log('✅ 默认模型已配置');
   }
 
-  // 标记已初始化
-  localStorage.setItem('imagine-engine-initialized', 'true');
+  // 设置AI助手模型
+  const assistantModel = localStorage.getItem('ai-assistant-model');
+  if (!assistantModel) {
+    localStorage.setItem('ai-assistant-model', 'deepseek-ai/DeepSeek-V3.1');
+    console.log('✅ AI助手模型已配置');
+  }
+
+  // 使用ProviderManager设置（如果可用）
+  try {
+    ProviderManager.setApiKey('pockgo-image', 'sk-C358zCIUzlUZ7daJl4PEtu6njZz7g7k3luAWRqpS64gi0pjs');
+    ProviderManager.setApiKey('modelscope', 'ms-68b498a8-97d5-4fef-9329-15587817422f');
+    ProviderManager.setApiKey('google-official', 'AIzaSyDt-c_vKjr4HDYRnttjzdWWjThCF-Qw6cc');
+    ProviderManager.setActiveProvider('pockgo-image');
+    console.log('✅ ProviderManager配置完成');
+  } catch (err) {
+    console.warn('⚠️ ProviderManager配置跳过（使用直接localStorage）');
+  }
+
   console.log('🎉 默认配置初始化完成！');
 }
 
