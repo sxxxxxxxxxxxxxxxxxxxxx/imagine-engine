@@ -9,6 +9,10 @@ import { cookies } from 'next/headers';
 import { stripe } from '@/lib/stripe';
 import { PLANS } from '@/lib/stripe';
 
+// 声明为动态路由
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = createRouteHandlerClient({ cookies });

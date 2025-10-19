@@ -9,6 +9,10 @@ import { supabaseAdmin } from '@/lib/supabase';
 import Stripe from 'stripe';
 import { PLANS } from '@/lib/stripe';
 
+// 声明为动态路由
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
