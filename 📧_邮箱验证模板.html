@@ -1,187 +1,99 @@
 <!-- 
-  Imagine Engine - 邮箱验证邮件模板
-  复制以下内容到 Supabase Dashboard → Authentication → Email Templates → Confirm signup
+  Imagine Engine - 超精美邮箱验证模板
+  复制到 Supabase Dashboard → Authentication → Email Templates → Confirm signup
 -->
 
-<!-- 主题 -->
-验证您的 Imagine Engine 账户 💎
+<!-- 主题（Subject） - 避免全大写和垃圾邮件关键词 -->
+欢迎来到 Imagine Engine - 请验证您的邮箱
 
-<!-- 邮件内容（Message body） -->
+<!-- 邮件内容（Message Body） -->
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-      background-color: #f9fafb;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background-color: #ffffff;
-    }
-    .header {
-      background: linear-gradient(135deg, #2DD4BF 0%, #14B8A6 100%);
-      padding: 40px 20px;
-      text-align: center;
-    }
-    .content {
-      padding: 40px 30px;
-    }
-    .button {
-      display: inline-block;
-      background-color: #2DD4BF;
-      color: #ffffff !important;
-      padding: 16px 48px;
-      text-decoration: none;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 16px;
-      margin: 24px 0;
-      box-shadow: 0 4px 12px rgba(45, 212, 191, 0.3);
-    }
-    .footer {
-      background-color: #f3f4f6;
-      padding: 30px;
-      text-align: center;
-      color: #6b7280;
-      font-size: 14px;
-    }
-    .feature-list {
-      margin: 24px 0;
-      padding: 0;
-      list-style: none;
-    }
-    .feature-list li {
-      padding: 12px 0;
-      color: #374151;
-      font-size: 15px;
-    }
-    .highlight-box {
-      background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
-      border-left: 4px solid #2DD4BF;
-      padding: 20px;
-      margin: 24px 0;
-      border-radius: 8px;
-    }
-  </style>
 </head>
-<body>
-  <div class="container">
+<body style="margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);">
+  
+  <!-- 主容器 -->
+  <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.1);">
+    
     <!-- Header -->
-    <div class="header">
-      <div style="font-size: 48px; margin-bottom: 12px;">✨</div>
-      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">
-        欢迎来到 Imagine Engine
+    <div style="background: linear-gradient(135deg, #2DD4BF 0%, #0D9488 100%); padding: 48px 32px; text-align: center;">
+      <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; backdrop-filter: blur(10px);">
+        <span style="font-size: 48px;">🎁</span>
+      </div>
+      <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -0.5px;">
+        欢迎加入 Imagine Engine
       </h1>
-      <p style="color: rgba(255,255,255,0.9); margin: 12px 0 0 0; font-size: 16px;">
-        专业 AI 图像创作平台
-      </p>
     </div>
 
     <!-- Content -->
-    <div class="content">
-      <p style="font-size: 16px; color: #374151; line-height: 1.6; margin-top: 0;">
-        Hi {{ .Email }},
-      </p>
-
-      <p style="font-size: 16px; color: #374151; line-height: 1.6;">
-        感谢您注册 <strong style="color: #2DD4BF;">Imagine Engine</strong>！
-      </p>
-
-      <!-- 福利突出显示 -->}
-      <div class="highlight-box">
-        <div style="font-size: 32px; margin-bottom: 8px;">🎁</div>
-        <p style="margin: 0; font-size: 20px; font-weight: 700; color: #0f766e;">
-          您已获得 10 张免费 AI 图片生成额度！
+    <div style="padding: 48px 32px;">
+      
+      <!-- 福利卡片 -->
+      <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-radius: 16px; padding: 32px; margin-bottom: 32px; text-align: center; border: 2px solid #2DD4BF;">
+        <p style="margin: 0 0 8px 0; font-size: 15px; color: #047857; font-weight: 600;">
+          验证邮箱即可获得
         </p>
-        <p style="margin: 8px 0 0 0; font-size: 14px; color: #14b8a6;">
-          验证邮箱后立即激活
+        <p style="margin: 0; font-size: 36px; font-weight: 900; color: #0D9488; line-height: 1.2;">
+          10 张额度
+        </p>
+        <p style="margin: 8px 0 0 0; font-size: 14px; color: #059669;">
+          AI 图像创作服务
         </p>
       </div>
 
       <!-- 验证按钮 -->
-      <div style="text-align: center; margin: 32px 0;">
-        <a href="{{ .ConfirmationURL }}" class="button">
-          验证邮箱并开始创作 →
+      <div style="text-align: center; margin: 40px 0;">
+        <a href="{{ .ConfirmationURL }}" style="display: inline-block; background: linear-gradient(135deg, #2DD4BF 0%, #14B8A6 100%); color: #ffffff; padding: 18px 48px; text-decoration: none; border-radius: 16px; font-weight: 700; font-size: 18px; box-shadow: 0 8px 24px rgba(45, 212, 191, 0.4);">
+          验证邮箱地址
         </a>
       </div>
 
-      <p style="font-size: 14px; color: #6b7280; text-align: center; margin-bottom: 32px;">
-        或复制以下链接到浏览器：<br>
-        <span style="color: #2DD4BF; word-break: break-all;">{{ .ConfirmationURL }}</span>
+      <p style="text-align: center; font-size: 13px; color: #9ca3af; margin: 24px 0;">
+        此链接24小时内有效，请尽快完成验证
       </p>
 
-      <!-- 功能介绍 -->
-      <p style="font-size: 16px; color: #374151; font-weight: 600; margin-bottom: 16px;">
-        验证后您可以立即体验：
-      </p>
-
-      <ul class="feature-list">
-        <li>
-          <span style="color: #2DD4BF; font-weight: 700;">✨</span>
-          <strong>多种风格生成</strong> - 写实、动漫、油画等多种AI模型
-        </li>
-        <li>
-          <span style="color: #2DD4BF; font-weight: 700;">🎭</span>
-          <strong>多图融合创作</strong> - 最多6张图片智能融合
-        </li>
-        <li>
-          <span style="color: #2DD4BF; font-weight: 700;">📐</span>
-          <strong>精确比例控制</strong> - 支持多种比例，输出准确
-        </li>
-        <li>
-          <span style="color: #2DD4BF; font-weight: 700;">🤖</span>
-          <strong>AI 智能助手</strong> - 实时帮助优化提示词
-        </li>
-      </ul>
-
-      <!-- 统计数据 -->
-      <div style="display: flex; justify-content: space-around; margin: 32px 0; padding: 24px; background-color: #f9fafb; border-radius: 12px;">
-        <div style="text-align: center;">
-          <div style="font-size: 24px; font-weight: 700; color: #2DD4BF;">110+</div>
-          <div style="font-size: 12px; color: #6b7280;">精选案例</div>
+      <!-- 特性展示 -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 40px 0;">
+        <div style="text-align: center; padding: 20px; background: #f9fafb; border-radius: 12px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">🎭</div>
+          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #374151;">多图融合</p>
         </div>
-        <div style="text-align: center;">
-          <div style="font-size: 24px; font-weight: 700; color: #2DD4BF;">10</div>
-          <div style="font-size: 12px; color: #6b7280;">免费额度</div>
+        <div style="text-align: center; padding: 20px; background: #f9fafb; border-radius: 12px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">📐</div>
+          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #374151;">精确比例</p>
         </div>
-        <div style="text-align: center;">
-          <div style="font-size: 24px; font-weight: 700; color: #2DD4BF;">0</div>
-          <div style="font-size: 12px; color: #6b7280;">信用卡要求</div>
+        <div style="text-align: center; padding: 20px; background: #f9fafb; border-radius: 12px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">🤖</div>
+          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #374151;">AI 助手</p>
+        </div>
+        <div style="text-align: center; padding: 20px; background: #f9fafb; border-radius: 12px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">✨</div>
+          <p style="margin: 0; font-size: 14px; font-weight: 600; color: #374151;">110+ 案例</p>
         </div>
       </div>
 
-      <!-- 提示 -->
-      <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin: 24px 0;">
-        <p style="margin: 0; font-size: 14px; color: #92400e;">
-          💡 <strong>温馨提示</strong>: 验证链接24小时内有效，请尽快验证。
-        </p>
-      </div>
     </div>
 
     <!-- Footer -->
-    <div class="footer">
-      <p style="margin: 0 0 12px 0; font-size: 14px;">
-        <strong style="color: #2DD4BF;">Imagine Engine</strong> - 专业 AI 图像创作平台
+    <div style="background: #f9fafb; padding: 32px; text-align: center; border-top: 1px solid #e5e7eb;">
+      <p style="margin: 0 0 8px 0; font-size: 15px; color: #374151; font-weight: 600;">
+        Imagine Engine
       </p>
-      <p style="margin: 0 0 8px 0;">
-        <a href="https://your-domain.vercel.app" style="color: #2DD4BF; text-decoration: none;">访问网站</a>
-        &nbsp;|&nbsp;
-        <a href="https://your-domain.vercel.app/showcase" style="color: #2DD4BF; text-decoration: none;">查看案例</a>
-        &nbsp;|&nbsp;
-        <a href="https://your-domain.vercel.app/pricing" style="color: #2DD4BF; text-decoration: none;">订阅套餐</a>
-      </p>
-      <p style="margin: 16px 0 0 0; font-size: 12px; color: #9ca3af;">
-        如果您没有注册 Imagine Engine，请忽略此邮件。<br>
-        此邮件由系统自动发送，请勿直接回复。
+      <p style="margin: 0; font-size: 13px; color: #9ca3af;">
+        专业 AI 图像创作平台
       </p>
     </div>
+
   </div>
+
+  <!-- 底部小字 -->
+  <p style="text-align: center; font-size: 12px; color: #9ca3af; margin: 24px 0 0 0;">
+    如果您没有注册此账号，请忽略此邮件
+  </p>
+
 </body>
 </html>
 

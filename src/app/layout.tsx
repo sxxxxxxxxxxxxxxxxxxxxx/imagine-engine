@@ -32,10 +32,10 @@ export const metadata: Metadata = {
   authors: [{ name: 'Imagine Engine' }],
   creator: 'Imagine Engine',
   publisher: 'Imagine Engine',
-  icons: {
-    icon: '/icon.png',
-    apple: '/icon.png',
-  },
+  // icons: {
+  //   icon: '/icon.png',
+  //   apple: '/icon.png',
+  // },
   openGraph: {
     title: 'Imagine Engine - AI Image Creation for Tech Innovators',
     description: 'Professional AI creation workspace for developers and tech enthusiasts',

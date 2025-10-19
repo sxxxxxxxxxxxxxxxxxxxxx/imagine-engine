@@ -12,7 +12,8 @@ import {
   Shield,
   ArrowRight,
   CheckCircle2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Mail
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -21,10 +22,23 @@ export default function HomePage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [activeLayer, setActiveLayer] = useState<number>(2); // 0=背景1, 1=背景2, 2=前景
+  const [emailCopied, setEmailCopied] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // 复制邮箱到剪贴板
+  const copyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText('send@2art.fun');
+      setEmailCopied(true);
+      setTimeout(() => setEmailCopied(false), 2000);
+    } catch (err) {
+      // 如果复制失败，打开mailto
+      window.location.href = 'mailto:send@2art.fun';
+    }
+  };
 
   // 点击图片切换到前景
   const handleImageClick = (layerIndex: number) => {
@@ -112,6 +126,8 @@ export default function HomePage() {
         product: '产品',
         resources: '资源',
         company: '公司',
+        contact: '联系我们',
+        email: 'send@2art.fun',
         copyright: '专业 AI 创作平台'
       }
     },
@@ -677,11 +693,47 @@ export default function HomePage() {
                 <li><Link href="/settings" className="hover:text-primary-400">{language === 'zh' ? '设置' : 'Settings'}</Link></li>
               </ul>
             </div>
+
+            <div>
+              <h4 className="font-semibold text-dark-900 dark:text-dark-50 mb-4">
+                {language === 'zh' ? '联系我们' : 'Contact'}
+              </h4>
+              <div className="space-y-2 text-sm text-dark-600 dark:text-dark-400">
+                <button 
+                  onClick={copyEmail}
+                  className="hover:text-primary-400 flex items-center gap-2 transition-colors group"
+                >
+                  <Mail className="w-4 h-4 group-hover:text-primary-500" />
+                  <span className="group-hover:underline">send@2art.fun</span>
+                  {emailCopied && (
+                    <span className="text-xs text-primary-600 dark:text-primary-400 animate-fade-in font-medium">
+                      {language === 'zh' ? '✓ 已复制' : '✓ Copied'}
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
           
           <div className="pt-8 border-t border-dark-200 dark:border-dark-800 text-center text-sm text-dark-500">
-            © 2025 {language === 'zh' ? '创想引擎' : 'Imagine Engine'}. {t.footer.copyright}.
+            <div>
+              © 2025 {language === 'zh' ? '创想引擎' : 'Imagine Engine'}. {t.footer.copyright}.
             </div>
+            <div className="mt-2">
+              <button 
+                onClick={copyEmail}
+                className="text-primary-600 dark:text-primary-400 hover:underline inline-flex items-center gap-1.5"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                {language === 'zh' ? '联系支持' : 'Contact Support'}
+                {emailCopied && (
+                  <span className="text-xs animate-fade-in">
+                    ({language === 'zh' ? '已复制' : 'Copied'})
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
           </div>
         </footer>
     </div>
