@@ -1,0 +1,86 @@
+# 依赖
+/node_modules
+/.pnp
+.pnp.js
+
+# 测试
+/coverage
+
+# Next.js
+/.next/
+/out/
+
+# 生产
+/build
+
+# 其他
+.DS_Store
+*.pem
+
+# 调试
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 本地环境变量（不要上传）
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# ============================================
+# 教程文档和临时文件（不上传到GitHub）
+# ============================================
+
+# 所有带emoji的教程文档
+*_*.md
+🎉*.md
+🎊*.md
+🎯*.md
+🏆*.md
+🚀*.md
+🚨*.md
+🔧*.md
+🔐*.md
+🔑*.md
+🔍*.md
+📦*.md
+📧*.md
+📝*.md
+⚡*.md
+✅*.md
+✨*.md
+⭐*.md
+🆘*.md
+🗑*.md
+🔥*.md
+
+# 临时SQL文件
+⚡️_一键修复配额.sql
+🗑️_清除测试用户数据.sql
+📧_邮箱验证配置.sql
+
+# 环境变量文件（包含真实密钥，不上传）
+VERCEL_ENV.env
+ENV_TEMPLATE.md
+
+# 临时HTML文件
+📧_邮箱验证模板.html
+
+# ============================================
+# 保留的重要文件
+# ============================================
+# SUPABASE_SETUP.sql - 保留（数据库初始化）
+# README.md - 保留
+# CHANGELOG.md - 保留
+# package.json - 保留
+# 所有 src/ 下的代码文件 - 保留
