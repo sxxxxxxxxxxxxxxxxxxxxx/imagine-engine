@@ -358,7 +358,11 @@ export default function HomePage() {
                   <img
                     key={`img1-${currentImageIndex}`}
                     src={showcaseImages[currentImageIndex]}
-                    alt="AI Generated"
+                    alt="AI Generated Example"
+                    loading="lazy"
+                    decoding="async"
+                    width="400"
+                    height="400"
                     className="absolute inset-0 w-full h-full transition-all duration-[1000ms] ease-out group-hover:scale-105"
                     style={{
                       objectFit: 'cover',
@@ -395,7 +399,11 @@ export default function HomePage() {
                   <img
                     key={`img2-${(currentImageIndex + 1) % showcaseImages.length}`}
                     src={showcaseImages[(currentImageIndex + 1) % showcaseImages.length]}
-                    alt="AI Generated"
+                    alt="AI Generated Example"
+                    loading="lazy"
+                    decoding="async"
+                    width="400"
+                    height="400"
                     className="absolute inset-0 w-full h-full transition-all duration-[1000ms] ease-out group-hover:scale-105"
                     style={{
                       objectFit: 'cover',
@@ -432,7 +440,11 @@ export default function HomePage() {
                   <img
                     key={`img3-${(currentImageIndex + 2) % showcaseImages.length}`}
                     src={showcaseImages[(currentImageIndex + 2) % showcaseImages.length]}
-                    alt="AI Generated"
+                    alt="AI Generated Example"
+                    loading="lazy"
+                    decoding="async"
+                    width="400"
+                    height="400"
                     className="absolute inset-0 w-full h-full transition-all duration-[1000ms] ease-out group-hover:scale-105"
                     style={{
                       objectFit: 'cover',

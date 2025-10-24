@@ -88,6 +88,14 @@ export default function RootLayout({
             </LanguageProvider>
           </ThemeProvider>
         </ErrorBoundary>
+        
+        {/* Vercel Analytics - 性能监控 */}
+        {process.env.NODE_ENV === 'production' && (
+          <>
+            <script async src="https://cdn.vercel-insights.com/v1/script.debug.js" data-endpoint="/_vercel/insights/view" />
+            <script async src="https://va.vercel-scripts.com/v1/speed-insights/script.debug.js" />
+          </>
+        )}
       </body>
     </html>
   );
