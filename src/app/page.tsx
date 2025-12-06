@@ -78,13 +78,13 @@ export default function HomePage() {
     zh: {
       hero: {
         badge: 'v3.0 技术版',
-        freeBanner: '🎁 新用户专享：注册即送 10 张免费 AI 图片！',
+        freeBanner: '🎁 新用户专享：注册即送 20 张免费 AI 图片！',
         title1: '专业 AI 图像',
         title2: '创作工作台',
         description: '面向开发者和技术创新者。多模型支持、API 访问和专业工具，适合认真的 AI 图像创作。',
         cta1: '免费开始创作',
         cta2: '查看文档',
-        ctaSubtext: '无需信用卡，注册即送10张'
+        ctaSubtext: '无需信用卡，注册即送20张'
       },
       features: [
         { title: 'AI Studio', description: '多模型支持的专业图片生成' },
@@ -103,7 +103,7 @@ export default function HomePage() {
         free: {
           name: 'Free',
           price: '¥0',
-          features: ['10 张/月', '基础功能', '社区支持'],
+          features: ['20 张/月', '基础功能', '社区支持'],
           cta: '免费开始'
         },
         pro: {
@@ -287,8 +287,8 @@ export default function HomePage() {
           </p>
           <p className="text-xl text-dark-500 dark:text-dark-500 mb-14 max-w-3xl">
             {language === 'zh' 
-              ? '注册即送 10 张免费图片 · 无需信用卡'
-              : 'Get 10 Free Images on Sign Up · No Credit Card Required'}
+              ? '注册即送 20 张免费图片 · 无需信用卡'
+              : 'Get 20 Free Images on Sign Up · No Credit Card Required'}
           </p>
 
           {/* CTA - 更大更突出 */}
@@ -310,7 +310,7 @@ export default function HomePage() {
               </span>
               <span className="flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-primary-500" />
-                <span className="font-medium">{language === 'zh' ? '注册送 10 张' : 'Get 10 Free'}</span>
+                <span className="font-medium">{language === 'zh' ? '注册送 20 张' : 'Get 20 Free'}</span>
               </span>
               <span className="flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-primary-500" />
@@ -555,23 +555,31 @@ export default function HomePage() {
             <h2 className="text-4xl font-bold text-dark-900 dark:text-dark-50 mb-4">
               {t.pricing.title}
             </h2>
-            <p className="text-lg text-dark-600 dark:text-dark-400">
+            <p className="text-lg text-dark-600 dark:text-dark-400 mb-6">
               {t.pricing.subtitle}
             </p>
+            {/* 推荐基础版提示 */}
+            <div className="flex justify-center mb-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800">
+                <span className="text-lg text-primary-700 dark:text-primary-400 font-semibold">
+                  {language === 'zh' ? '💡 90%的用户选择基础版 - 性价比最高' : '💡 90% choose Basic - Best Value'}
+                </span>
+              </div>
+            </div>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 items-stretch">
             {/* Free */}
-            <div className="card p-8 border border-dark-200 dark:border-dark-800 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
-              <h3 className="text-xl font-bold text-dark-900 dark:text-dark-50 mb-2">
+            <div className="card p-8 bg-white dark:bg-dark-900 border-2 border-dark-200 dark:border-dark-800 rounded-2xl hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-xl hover:transform hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+              <h3 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-2">
                 {t.pricing.free.name}
               </h3>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-dark-900 dark:text-dark-50">
+                <span className="text-5xl font-bold text-dark-900 dark:text-dark-50">
                   {t.pricing.free.price}
                 </span>
               </div>
-              <ul className="space-y-3 mb-8 text-sm">
+              <ul className="space-y-3 mb-8 text-sm flex-grow">
                 {t.pricing.free.features.map((feature, idx) => (
                   <li key={idx} className="flex items-center gap-2 text-dark-700 dark:text-dark-300">
                     <CheckCircle2 className="w-4 h-4 text-primary-500 flex-shrink-0" />
@@ -579,23 +587,27 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/create" className="block w-full btn-outline text-center">
+              <Link href="/create" className="block w-full btn-outline text-center mt-auto">
                 {t.pricing.free.cta}
               </Link>
             </div>
             
-            {/* Basic - 基础版 */}
-            <div className="card p-8 border border-dark-200 dark:border-dark-800 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
-              <h3 className="text-xl font-bold text-dark-900 dark:text-dark-50 mb-2">
+            {/* Basic - 基础版（主推） */}
+            <div className="card p-8 border-4 border-primary-500 shadow-xl relative bg-gradient-to-br from-white to-primary-50/20 dark:from-dark-900 dark:to-primary-900/10 rounded-2xl flex flex-col h-full hover:shadow-2xl hover:transform hover:-translate-y-2 hover:border-primary-600 transition-all duration-300">
+              {/* 最受欢迎徽章 */}
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-primary-600 text-white text-xs font-semibold rounded-full shadow-md ring-1 ring-white/20 dark:ring-dark-900/30">
+                {language === 'zh' ? '最受欢迎' : 'Most Popular'}
+              </div>
+              <h3 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-2 mt-2">
                 {language === 'zh' ? '基础版' : 'Basic'}
               </h3>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-dark-900 dark:text-dark-50">
+                <span className="text-5xl font-bold text-dark-900 dark:text-dark-50">
                   ¥19.9
                 </span>
                 <span className="text-dark-500 text-base">/月</span>
               </div>
-              <ul className="space-y-3 mb-8 text-sm">
+              <ul className="space-y-3 mb-8 text-sm flex-grow">
                 <li className="flex items-center gap-2 text-dark-700 dark:text-dark-300">
                   <CheckCircle2 className="w-4 h-4 text-primary-500 flex-shrink-0" />
                   {language === 'zh' ? '200 张/月' : '200 images/month'}
@@ -613,26 +625,23 @@ export default function HomePage() {
                   {language === 'zh' ? '社区论坛' : 'Community forum'}
                 </li>
               </ul>
-              <Link href="/pricing" className="block w-full btn-outline text-center">
+              <Link href="/pricing" className="block w-full btn-primary text-center mt-auto">
                 {language === 'zh' ? '立即订阅' : 'Subscribe Now'}
               </Link>
             </div>
 
-            {/* Pro - 推荐 */}
-            <div className="card p-8 border-2 border-primary-500 dark:border-primary-500 relative shadow-lg">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary-500 text-white text-xs font-semibold rounded-full">
-                {t.pricing.pro.badge}
-              </div>
-              <h3 className="text-xl font-bold text-dark-900 dark:text-dark-50 mb-2">
+            {/* Pro */}
+            <div className="card p-8 bg-white dark:bg-dark-900 border-2 border-dark-200 dark:border-dark-800 rounded-2xl hover:shadow-xl hover:transform hover:-translate-y-1 hover:border-primary-300 dark:hover:border-primary-700 transition-all duration-300 flex flex-col h-full">
+              <h3 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-2">
                 {t.pricing.pro.name}
               </h3>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-dark-900 dark:text-dark-50">
+                <span className="text-5xl font-bold text-dark-900 dark:text-dark-50">
                   {t.pricing.pro.price}
                 </span>
                 <span className="text-dark-500 text-base">{t.pricing.pro.period}</span>
               </div>
-              <ul className="space-y-3 mb-8 text-sm">
+              <ul className="space-y-3 mb-8 text-sm flex-grow">
                 {t.pricing.pro.features.map((feature, idx) => (
                   <li key={idx} className="flex items-center gap-2 text-dark-700 dark:text-dark-300">
                     <CheckCircle2 className="w-4 h-4 text-primary-500 flex-shrink-0" />
@@ -640,7 +649,7 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/pricing" className="block w-full btn-primary text-center">
+              <Link href="/pricing" className="block w-full btn-outline text-center mt-auto">
                 {t.pricing.pro.cta}
               </Link>
             </div>
@@ -657,97 +666,160 @@ export default function HomePage() {
       </section>
 
         {/* Footer */}
-      <footer className="border-t border-dark-200 dark:border-dark-800 mt-20">
-        <div className="content-wrapper py-12">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-              <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-5 h-5 text-primary-400" />
-                <span className="font-bold text-dark-900 dark:text-dark-50">
-                  {language === 'zh' ? '创想引擎' : 'Imagine Engine'}
-                </span>
-              </div>
-              <p className="text-sm text-dark-600 dark:text-dark-400">
-                {language === 'zh' 
-                  ? '面向开发者的专业 AI 图像创作工作台。' 
-                  : 'Professional AI image creation workspace for developers.'}
-              </p>
-              </div>
-              
-              <div>
-              <h4 className="font-semibold text-dark-900 dark:text-dark-50 mb-4">
-                {t.footer.product}
-              </h4>
-              <ul className="space-y-2 text-sm text-dark-600 dark:text-dark-400">
-                <li><Link href="/create" className="hover:text-primary-400">AI Studio</Link></li>
-                <li><Link href="/edit" className="hover:text-primary-400">Editor</Link></li>
-                <li><Link href="/playground" className="hover:text-primary-400">Playground</Link></li>
-                <li><Link href="/gallery" className="hover:text-primary-400">Gallery</Link></li>
-                </ul>
-              </div>
-              
-              <div>
-              <h4 className="font-semibold text-dark-900 dark:text-dark-50 mb-4">
-                {t.footer.resources}
-              </h4>
-              <ul className="space-y-2 text-sm text-dark-600 dark:text-dark-400">
-                <li><Link href="/docs" className="hover:text-primary-400">{language === 'zh' ? '文档' : 'Documentation'}</Link></li>
-                <li><Link href="/templates" className="hover:text-primary-400">Templates</Link></li>
-                <li><Link href="/settings" className="hover:text-primary-400">API</Link></li>
-                </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-dark-900 dark:text-dark-50 mb-4">
-                {t.footer.company}
-              </h4>
-              <ul className="space-y-2 text-sm text-dark-600 dark:text-dark-400">
-                <li><Link href="/settings" className="hover:text-primary-400">{language === 'zh' ? '设置' : 'Settings'}</Link></li>
-              </ul>
-            </div>
+      <footer className="relative mt-32 bg-gradient-to-b from-dark-50 to-white dark:from-dark-950 dark:to-dark-900 overflow-hidden">
+        {/* 装饰性背景 */}
+        <div className="absolute inset-0 opacity-5 dark:opacity-10">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary-500 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary-600 rounded-full blur-3xl" />
+        </div>
 
-            <div>
-              <h4 className="font-semibold text-dark-900 dark:text-dark-50 mb-4">
-                {language === 'zh' ? '联系我们' : 'Contact'}
-              </h4>
-              <div className="space-y-2 text-sm text-dark-600 dark:text-dark-400">
-                <button 
-                  onClick={copyEmail}
-                  className="hover:text-primary-400 flex items-center gap-2 transition-colors group"
-                >
-                  <Mail className="w-4 h-4 group-hover:text-primary-500" />
-                  <span className="group-hover:underline">send@2art.fun</span>
-                  {emailCopied && (
-                    <span className="text-xs text-primary-600 dark:text-primary-400 animate-fade-in font-medium">
-                      {language === 'zh' ? '✓ 已复制' : '✓ Copied'}
-                    </span>
-                  )}
-                </button>
+        <div className="content-wrapper relative z-10">
+          {/* 主内容区 */}
+          <div className="py-20 border-b border-dark-200/50 dark:border-dark-800/50">
+            <div className="grid md:grid-cols-5 gap-12">
+              {/* 品牌区 - 更宽 */}
+              <div className="md:col-span-2">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-2xl font-bold text-dark-900 dark:text-dark-50">
+                    {language === 'zh' ? '创想引擎' : 'Imagine Engine'}
+                  </span>
+                </div>
+                <p className="text-base text-dark-600 dark:text-dark-400 mb-6 leading-relaxed">
+                  {language === 'zh' 
+                    ? '专业的 AI 图像创作平台，为开发者和创意工作者提供强大的工具和灵活的 API。' 
+                    : 'Professional AI image creation platform with powerful tools and flexible APIs for developers and creators.'}
+                </p>
+                {/* 社交媒体图标 */}
+                <div className="flex items-center gap-4">
+                  <a href="#" className="w-9 h-9 rounded-full bg-dark-100 dark:bg-dark-800 flex items-center justify-center hover:bg-primary-100 dark:hover:bg-primary-900/30 hover:scale-110 transition-all duration-200">
+                    <svg className="w-4 h-4 text-dark-600 dark:text-dark-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                  </a>
+                  <a href="#" className="w-9 h-9 rounded-full bg-dark-100 dark:bg-dark-800 flex items-center justify-center hover:bg-primary-100 dark:hover:bg-primary-900/30 hover:scale-110 transition-all duration-200">
+                    <svg className="w-4 h-4 text-dark-600 dark:text-dark-400" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
+                  </a>
+                  <a href="#" className="w-9 h-9 rounded-full bg-dark-100 dark:bg-dark-800 flex items-center justify-center hover:bg-primary-100 dark:hover:bg-primary-900/30 hover:scale-110 transition-all duration-200">
+                    <svg className="w-4 h-4 text-dark-600 dark:text-dark-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121L7.773 13.85l-2.897-.906c-.63-.196-.642-.63.135-.93l11.316-4.36c.527-.195.984.126.813.927z"/></svg>
+                  </a>
+                </div>
+              </div>
+              
+              {/* 产品 */}
+              <div>
+                <h4 className="text-xs font-bold text-dark-900 dark:text-dark-50 mb-4 uppercase tracking-wider">
+                  {t.footer.product}
+                </h4>
+                <ul className="space-y-3 text-sm">
+                  <li>
+                    <Link href="/create" className="text-dark-600 dark:text-dark-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors inline-flex items-center gap-2 group">
+                      <span>AI Studio</span>
+                      <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/edit" className="text-dark-600 dark:text-dark-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors inline-flex items-center gap-2 group">
+                      <span>Editor</span>
+                      <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/playground" className="text-dark-600 dark:text-dark-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors inline-flex items-center gap-2 group">
+                      <span>Playground</span>
+                      <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/gallery" className="text-dark-600 dark:text-dark-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors inline-flex items-center gap-2 group">
+                      <span>Gallery</span>
+                      <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+              
+              {/* 资源 */}
+              <div>
+                <h4 className="text-xs font-bold text-dark-900 dark:text-dark-50 mb-4 uppercase tracking-wider">
+                  {t.footer.resources}
+                </h4>
+                <ul className="space-y-3 text-sm">
+                  <li>
+                    <Link href="/docs" className="text-dark-600 dark:text-dark-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors inline-flex items-center gap-2 group">
+                      <span>{language === 'zh' ? '文档' : 'Documentation'}</span>
+                      <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/templates" className="text-dark-600 dark:text-dark-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors inline-flex items-center gap-2 group">
+                      <span>Templates</span>
+                      <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/showcase" className="text-dark-600 dark:text-dark-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors inline-flex items-center gap-2 group">
+                      <span>Showcase</span>
+                      <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/pricing" className="text-dark-600 dark:text-dark-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors inline-flex items-center gap-2 group">
+                      <span>{language === 'zh' ? '定价' : 'Pricing'}</span>
+                      <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            
+              {/* 公司 */}
+              <div>
+                <h4 className="text-xs font-bold text-dark-900 dark:text-dark-50 mb-4 uppercase tracking-wider">
+                  {t.footer.company}
+                </h4>
+                <ul className="space-y-3 text-sm">
+                  <li>
+                    <Link href="/settings" className="text-dark-600 dark:text-dark-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors inline-flex items-center gap-2 group">
+                      <span>{language === 'zh' ? '设置' : 'Settings'}</span>
+                      <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/help" className="text-dark-600 dark:text-dark-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors inline-flex items-center gap-2 group">
+                      <span>{language === 'zh' ? '帮助中心' : 'Help Center'}</span>
+                      <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </Link>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
           
-          <div className="pt-8 border-t border-dark-200 dark:border-dark-800 text-center text-sm text-dark-500">
-            <div>
+          {/* 底部栏 */}
+          <div className="py-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* 版权信息 */}
+            <div className="text-sm text-dark-500 dark:text-dark-500">
               © 2025 {language === 'zh' ? '创想引擎' : 'Imagine Engine'}. {t.footer.copyright}.
             </div>
-            <div className="mt-2">
-              <button 
-                onClick={copyEmail}
-                className="text-primary-600 dark:text-primary-400 hover:underline inline-flex items-center gap-1.5"
-              >
-                <Mail className="w-3.5 h-3.5" />
-                {language === 'zh' ? '联系支持' : 'Contact Support'}
-                {emailCopied && (
-                  <span className="text-xs animate-fade-in">
-                    ({language === 'zh' ? '已复制' : 'Copied'})
-                  </span>
-                )}
-              </button>
-            </div>
+            
+            {/* 联系邮箱 - 卡片式 */}
+            <button 
+              onClick={copyEmail}
+              className="group flex items-center gap-3 px-5 py-2.5 rounded-xl bg-dark-100/50 dark:bg-dark-800/50 hover:bg-primary-50 dark:hover:bg-primary-900/20 border border-dark-200 dark:border-dark-700 hover:border-primary-300 dark:hover:border-primary-700 transition-all duration-300"
+            >
+              <Mail className="w-4 h-4 text-dark-600 dark:text-dark-400 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors" />
+              <span className="text-sm font-medium text-dark-700 dark:text-dark-300 group-hover:text-primary-700 dark:group-hover:text-primary-300">
+                send@2art.fun
+              </span>
+              {emailCopied && (
+                <span className="text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 px-2 py-0.5 rounded-full animate-fade-in">
+                  {language === 'zh' ? '✓ 已复制' : '✓ Copied'}
+                </span>
+              )}
+            </button>
           </div>
-          </div>
-        </footer>
+        </div>
+      </footer>
     </div>
   );
 }
