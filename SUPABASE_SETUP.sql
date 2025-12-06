@@ -15,7 +15,7 @@ BEGIN
     NEW.raw_user_meta_data->>'avatar_url'
   );
   
-  -- 创建 Free 订阅（10张配额）
+  -- 创建 Free 订阅（20张配额）
   INSERT INTO public.subscriptions (
     user_id,
     plan_type,
@@ -29,7 +29,7 @@ BEGIN
     NEW.id,
     'free',
     'active',
-    10,  -- 免费10张
+    20,
     0,
     NOW(),
     NOW() + INTERVAL '1 month',
@@ -227,19 +227,19 @@ WHERE trigger_name = 'on_auth_user_created';
 -- 1. 检查 profile 是否自动创建
 -- SELECT * FROM public.profiles WHERE id = '你的用户ID';
 
--- 2. 检查 Free 订阅是否自动创建（10张配额）
+-- 2. 检查 Free 订阅是否自动创建（20张配额）
 -- SELECT * FROM public.subscriptions WHERE user_id = '你的用户ID';
--- 应该显示：plan_type='free', quota_total=10, quota_used=0, quota_remaining=10
+-- 应该显示：plan_type='free', quota_total=20, quota_used=0, quota_remaining=20
 
 -- 3. 测试生成1张图片后
 -- SELECT * FROM public.subscriptions WHERE user_id = '你的用户ID';
--- 应该显示：quota_used=1, quota_remaining=9
+-- 应该显示：quota_used=1, quota_remaining=19
 
--- 4. 测试生成10张后
+-- 4. 测试生成20张后
 -- SELECT * FROM public.subscriptions WHERE user_id = '你的用户ID';
--- 应该显示：quota_used=10, quota_remaining=0
+-- 应该显示：quota_used=20, quota_remaining=0
 
--- 5. 尝试生成第11张
+-- 5. 尝试生成第21张
 -- 应该返回错误: 'Insufficient quota'
 
 -- ============================================

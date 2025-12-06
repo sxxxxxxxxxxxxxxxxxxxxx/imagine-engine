@@ -34,11 +34,12 @@ export interface GenerateImageRequest {
 }
 
 export interface EditImageRequest {
-  tool: 'inpaint' | 'remove_bg' | 'id_photo';
+  tool: 'inpaint' | 'remove_bg' | 'id_photo' | 'upscale';
   image: string; // Base64 encoded
   mask?: string; // Base64 encoded, optional for inpaint
   instruction?: string; // For inpaint tool
   bgColor?: 'red' | 'blue' | 'white'; // For id_photo tool
+  scale?: number; // For upscale tool (2, 3, or 4)
   originalDimensions?: { width: number; height: number };
 }
 
@@ -378,9 +379,21 @@ Return the edited image maintaining original quality and dimensions.`,
 6. 不得修改人物的任何特征
 
 Return a professional ID photo with solid color background.`,
+
+      upscale: `Upscale this image by ${request.scale || 2}x while maintaining maximum quality and detail.
+
+【图片放大规则】
+1. 将图片放大${request.scale || 2}倍
+2. 使用AI超分辨率技术增强细节
+3. 保持原图的色彩、风格和内容完全不变
+4. 增强边缘清晰度，减少模糊
+5. 保持自然的纹理和细节
+6. 不得添加任何新元素或修改内容
+
+Return the upscaled high-resolution image.`,
     };
 
-    const editPrompt = editPrompts[request.tool];
+    const editPrompt = editPrompts[request.tool as keyof typeof editPrompts];
 
     console.log('发送图片编辑请求:', { tool: request.tool, model: settings.model, baseUrl: settings.baseUrl });
 

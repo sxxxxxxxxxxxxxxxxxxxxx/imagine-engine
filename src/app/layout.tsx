@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   title: 'Imagine Engine - Professional AI Image Creation Platform',
   description: 'Tech-focused AI image generation platform. Multi-model support, batch processing, and developer-friendly tools.',
   keywords: [
-    'AI Image Generation', 
+    'AI Image Generation',
     'Batch Processing',
     'Multi-Model',
     'Developer Tools',
@@ -88,13 +88,28 @@ export default function RootLayout({
             </LanguageProvider>
           </ThemeProvider>
         </ErrorBoundary>
-        
+
         {/* Vercel Analytics - 性能监控 */}
         {process.env.NODE_ENV === 'production' && (
           <>
             <script async src="https://cdn.vercel-insights.com/v1/script.debug.js" data-endpoint="/_vercel/insights/view" />
             <script async src="https://va.vercel-scripts.com/v1/speed-insights/script.debug.js" />
           </>
+        )}
+
+        {/* Microsoft Clarity - 用户行为分析 */}
+        {process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function(c,l,a,r,i,t,y){
+                  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+                })(window, document, "clarity", "script", "${process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID}");
+              `,
+            }}
+          />
         )}
       </body>
     </html>

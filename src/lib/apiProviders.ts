@@ -81,6 +81,37 @@ export const PRESET_PROVIDERS: APIProvider[] = [
         descriptionZh: '多比例支持，正式版',
         costPer1k: 0.015,
       },
+      // Gemini 3 Pro 系列
+      {
+        id: 'gemini-3-pro-image-preview',
+        name: 'Gemini 3 Pro Image',
+        nameZh: 'Gemini 3 Pro 图像',
+        type: 'image',
+        supportedRatios: ['2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9', '1:1'],
+        description: 'Latest Gemini 3 Pro image generation',
+        descriptionZh: '最新 Gemini 3 Pro 图像生成',
+        costPer1k: 0.02,
+      },
+      {
+        id: 'gemini-3-pro-image-preview-2k',
+        name: 'Gemini 3 Pro Image 2K',
+        nameZh: 'Gemini 3 Pro 图像 2K',
+        type: 'image',
+        supportedRatios: ['2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9', '1:1'],
+        description: 'High resolution 2K output',
+        descriptionZh: '高分辨率 2K 输出',
+        costPer1k: 0.03,
+      },
+      {
+        id: 'gemini-3-pro-image-preview-4k',
+        name: 'Gemini 3 Pro Image 4K',
+        nameZh: 'Gemini 3 Pro 图像 4K',
+        type: 'image',
+        supportedRatios: ['2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9', '1:1'],
+        description: 'Ultra high resolution 4K output',
+        descriptionZh: '超高分辨率 4K 输出',
+        costPer1k: 0.05,
+      },
       // Qwen 系列
       {
         id: 'qwen-image',

@@ -243,6 +243,29 @@ export default function EditorPage() {
 
       {/* 主内容 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <div className="bg-white rounded-2xl p-4 shadow-lg flex items-center justify-between">
+                <div>
+                  <div className="text-lg font-bold text-gray-900">不用学 PS，也能 60 秒高质量修图</div>
+                  <div className="text-sm text-gray-600">证件照、去背景、局部擦除，一键出图｜每月 20 张免费</div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Link href="/create" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">现在试用</Link>
+                  <Link href="/pricing" className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-lg">按次购买</Link>
+                  <Link href="/pricing" className="text-sm text-blue-600 hover:underline">查看订阅对比</Link>
+                </div>
+              </div>
+            </div>
+            <div className="hidden md:block">
+              <div className="bg-white rounded-2xl p-4 shadow-lg text-center">
+                <div className="text-2xl font-bold text-gray-900">20</div>
+                <div className="text-xs text-gray-600">每月免费张数</div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="grid lg:grid-cols-3 gap-8">
           {/* 左侧控制面板 */}
           <div className="lg:col-span-1 space-y-6">
@@ -250,7 +273,7 @@ export default function EditorPage() {
             <div className="bg-white rounded-2xl p-6 shadow-lg">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">🎭 图片编辑</h2>
               <p className="text-gray-600 text-sm">智能抠图、背景移除、精确橡皮擦</p>
-          </div>
+            </div>
 
           {/* 上传图片 */}
             <div className="bg-white rounded-2xl p-6 shadow-lg">

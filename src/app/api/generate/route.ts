@@ -56,7 +56,28 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ 用户已登录:', user.email);
 
-    // ✅ 2. 检查配额
+    // ✅ 2. 检查用户是否被禁用
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('is_disabled, disabled_reason')
+      .eq('id', user.id)
+      .single();
+    
+    // 只有明确为true才禁用
+    if (profile?.is_disabled === true) {
+      console.log('🚫 禁用用户尝试生成图片:', user.email, '原因:', profile.disabled_reason);
+      const reason = profile.disabled_reason || '您的账号暂时无法使用';
+      return NextResponse.json({ 
+        error: 'QUOTA_EXHAUSTED',
+        message: `抱歉，${reason}。如有疑问，请联系客服。`,
+        disabled: true,
+        disabledReason: reason
+      }, { status: 403 });
+    }
+    
+    console.log('✅ 用户可以生成图片:', user.email, 'is_disabled =', profile?.is_disabled);
+
+    // ✅ 3. 检查配额
     const { data: quotaData, error: quotaError } = await supabase.rpc('check_user_quota', {
       p_user_id: user.id
     });

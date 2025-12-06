@@ -10,35 +10,101 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Zap, TrendingUp, Calendar, CreditCard, Image as ImageIcon, Loader2, Code2, Settings } from 'lucide-react';
+import { Zap, TrendingUp, Calendar, CreditCard, Image as ImageIcon, Loader2, Code2, Settings, Gift, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+const RedeemCodeModal = dynamic(() => import('@/components/RedeemCodeModal'), { ssr: false });
+
+interface SubscriptionInfo {
+  planType: string;
+  startDate?: string;
+  endDate?: string;
+  nextBillingDate?: string;
+}
+
+interface UserProfile {
+  displayName?: string;
+  email?: string;
+  createdAt?: string;
+}
 
 export default function DashboardPage() {
   const { user, isLoggedIn, loading: authLoading } = useAuth();
   const { language } = useLanguage();
   const router = useRouter();
-  
+
   const [quota, setQuota] = useState<any>(null);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [recentUsage, setRecentUsage] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showRedeemModal, setShowRedeemModal] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isLoggedIn) {
       router.push('/');
-    } else if (isLoggedIn) {
+    } else if (isLoggedIn && user?.id) {
       fetchDashboardData();
     }
-  }, [isLoggedIn, authLoading]);
+  }, [isLoggedIn, authLoading, user?.id]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // 获取配额信息
-      const quotaRes = await fetch('/api/quota/check');
+      // 1. 获取配额信息（带认证token）
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const quotaRes = await fetch('/api/quota/check', {
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`
+        }
+      });
       const quotaData = await quotaRes.json();
+
+      console.log('📊 仪表盘配额数据:', quotaData);
       setQuota(quotaData);
 
-      // 获取最近使用记录
+      // 2. 获取用户资料
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('display_name, username, avatar_url, created_at')
+        .eq('id', user?.id)
+        .single();
+
+      if (profileData) {
+        // 显示名称优先级：display_name > username > 邮箱前缀
+        const displayName = profileData.display_name
+          || profileData.username
+          || user?.email?.split('@')[0]
+          || '用户';
+
+        setProfile({
+          displayName: displayName,
+          email: user?.email,
+          createdAt: profileData.created_at
+        });
+      }
+
+      // 3. 获取订阅信息（修正字段名：start_date, end_date, status）
+      const { data: subscriptionData } = await supabase
+        .from('subscriptions')
+        .select('plan_type, start_date, end_date, quota_remaining, quota_total')
+        .eq('user_id', user?.id)
+        .eq('status', 'active')
+        .order('end_date', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (subscriptionData) {
+        setSubscription({
+          planType: subscriptionData.plan_type || 'free',
+          startDate: subscriptionData.start_date,
+          endDate: subscriptionData.end_date
+        });
+      }
+
+      // 4. 获取最近使用记录
       const { data: usageLogs } = await supabase
         .from('usage_logs')
         .select('*')
@@ -64,21 +130,33 @@ export default function DashboardPage() {
 
   if (!quota) return null;
 
-  const usagePercentage = quota.totalQuota > 0 
-    ? (quota.usedQuota / quota.totalQuota) * 100 
+  // 从quota或subscription获取配额数据（容错处理）
+  const totalQuota = quota.totalQuota || subscription?.quota_total || 0;
+  const usedQuota = quota.usedQuota || subscription?.quota_used || 0;
+  const remaining = quota.remaining || subscription?.quota_remaining || 0;
+
+  const usagePercentage = totalQuota > 0
+    ? (usedQuota / totalQuota) * 100
     : 0;
 
   return (
     <div className="page-container">
       <div className="content-wrapper max-w-6xl mx-auto">
-        {/* 页面标题 */}
+        {/* 页面标题 - 显示用户信息 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-dark-900 dark:text-dark-50 mb-2">
-            {language === 'zh' ? '我的仪表板' : 'My Dashboard'}
-          </h1>
-          <p className="text-dark-600 dark:text-dark-400">
-            {language === 'zh' ? '查看您的使用情况和订阅状态' : 'View your usage and subscription status'}
-          </p>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-full bg-primary-500/20 flex items-center justify-center">
+              <UserIcon className="w-6 h-6 text-primary-500" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-dark-900 dark:text-dark-50">
+                {language === 'zh' ? '欢迎, ' : 'Welcome, '}{profile?.displayName || user?.email?.split('@')[0]}
+              </h1>
+              <p className="text-dark-600 dark:text-dark-400">
+                {language === 'zh' ? '查看您的使用情况和订阅状态' : 'View your usage and subscription status'}
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
@@ -89,14 +167,15 @@ export default function DashboardPage() {
                 <Zap className="w-6 h-6 text-primary-500" />
                 {language === 'zh' ? '配额使用情况' : 'Quota Usage'}
               </h2>
-              <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                quota.planType === 'free' 
-                  ? 'bg-dark-200 dark:bg-dark-700 text-dark-600 dark:text-dark-400'
-                  : quota.planType === 'pro'
-                  ? 'bg-primary-200 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300'
-                  : 'bg-accent-200 dark:bg-accent-900/50 text-accent-700 dark:text-accent-300'
-              }`}>
-                {quota.planType?.toUpperCase()}
+              <span className={`px-3 py-1 rounded-full text-sm font-semibold ${(subscription?.planType || quota.planType) === 'free'
+                ? 'bg-dark-200 dark:bg-dark-700 text-dark-600 dark:text-dark-400'
+                : (subscription?.planType || quota.planType) === 'pro'
+                  ? 'bg-purple-200 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
+                  : (subscription?.planType || quota.planType) === 'basic'
+                    ? 'bg-primary-200 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300'
+                    : 'bg-accent-200 dark:bg-accent-900/50 text-accent-700 dark:text-accent-300'
+                }`}>
+                {(subscription?.planType || quota.planType)?.toUpperCase()}
               </span>
             </div>
 
@@ -122,13 +201,12 @@ export default function DashboardPage() {
                     fill="none"
                     strokeDasharray={`${2 * Math.PI * 56}`}
                     strokeDashoffset={`${2 * Math.PI * 56 * (1 - usagePercentage / 100)}`}
-                    className={`transition-all duration-500 ${
-                      usagePercentage > 80 
-                        ? 'text-red-500' 
-                        : usagePercentage > 50 
-                        ? 'text-yellow-500' 
+                    className={`transition-all duration-500 ${usagePercentage > 80
+                      ? 'text-red-500'
+                      : usagePercentage > 50
+                        ? 'text-yellow-500'
                         : 'text-primary-500'
-                    }`}
+                      }`}
                     strokeLinecap="round"
                   />
                 </svg>
@@ -149,7 +227,7 @@ export default function DashboardPage() {
                       {language === 'zh' ? '总配额' : 'Total Quota'}
                     </span>
                     <span className="font-semibold text-dark-900 dark:text-dark-50">
-                      {quota.totalQuota} {language === 'zh' ? '张' : 'images'}
+                      {totalQuota} {language === 'zh' ? '张' : 'images'}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -157,7 +235,7 @@ export default function DashboardPage() {
                       {language === 'zh' ? '已使用' : 'Used'}
                     </span>
                     <span className="font-semibold text-dark-900 dark:text-dark-50">
-                      {quota.usedQuota} {language === 'zh' ? '张' : 'images'}
+                      {usedQuota} {language === 'zh' ? '张' : 'images'}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -165,7 +243,7 @@ export default function DashboardPage() {
                       {language === 'zh' ? '剩余' : 'Remaining'}
                     </span>
                     <span className="font-bold text-primary-600 dark:text-primary-400 text-lg">
-                      {quota.remaining} {language === 'zh' ? '张' : 'images'}
+                      {remaining} {language === 'zh' ? '张' : 'images'}
                     </span>
                   </div>
                 </div>
@@ -173,13 +251,12 @@ export default function DashboardPage() {
                 {/* 进度条 */}
                 <div className="mt-4 h-3 bg-dark-200 dark:bg-dark-800 rounded-full overflow-hidden">
                   <div
-                    className={`h-full transition-all duration-500 ${
-                      usagePercentage > 80 
-                        ? 'bg-red-500' 
-                        : usagePercentage > 50 
-                        ? 'bg-yellow-500' 
+                    className={`h-full transition-all duration-500 ${usagePercentage > 80
+                      ? 'bg-red-500'
+                      : usagePercentage > 50
+                        ? 'bg-yellow-500'
                         : 'bg-primary-500'
-                    }`}
+                      }`}
                     style={{ width: `${usagePercentage}%` }}
                   />
                 </div>
@@ -187,17 +264,24 @@ export default function DashboardPage() {
             </div>
 
             {/* 快速操作 */}
-            <div className="flex gap-3">
-              <Link href="/pricing" className="btn-primary flex-1 text-center">
-                {language === 'zh' ? '升级套餐' : 'Upgrade Plan'}
+            <div className="grid grid-cols-3 gap-3">
+              <Link href="/pricing" className="btn-primary text-center text-sm">
+                {language === 'zh' ? '升级套餐' : 'Upgrade'}
               </Link>
-              <Link href="/create" className="btn-outline flex-1 text-center">
-                {language === 'zh' ? '开始创作' : 'Start Creating'}
+              <button
+                onClick={() => setShowRedeemModal(true)}
+                className="btn-outline text-center text-sm flex items-center justify-center gap-1 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-600 dark:hover:text-primary-400"
+              >
+                <Gift className="w-4 h-4" />
+                {language === 'zh' ? '兑换卡密' : 'Redeem'}
+              </button>
+              <Link href="/create" className="btn-outline text-center text-sm">
+                {language === 'zh' ? '开始创作' : 'Create'}
               </Link>
             </div>
           </div>
 
-          {/* 订阅信息卡片 */}
+          {/* 订阅信息卡片 - 修复后显示真实数据 */}
           <div className="card p-6">
             <h2 className="text-xl font-bold text-dark-900 dark:text-dark-50 mb-4 flex items-center gap-2">
               <Calendar className="w-6 h-6 text-primary-500" />
@@ -210,17 +294,31 @@ export default function DashboardPage() {
                   {language === 'zh' ? '当前套餐' : 'Current Plan'}
                 </p>
                 <p className="text-lg font-bold text-dark-900 dark:text-dark-50">
-                  {quota.planType?.toUpperCase()}
+                  {subscription?.planType?.toUpperCase() || quota.planType?.toUpperCase()}
                 </p>
               </div>
 
-              {quota.endDate && (
+              {subscription?.startDate && (
+                <div>
+                  <p className="text-sm text-dark-500 mb-1">
+                    {language === 'zh' ? '开始时间' : 'Started On'}
+                  </p>
+                  <p className="text-sm font-medium text-dark-700 dark:text-dark-300">
+                    {new Date(subscription.startDate).toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US')}
+                  </p>
+                </div>
+              )}
+
+              {subscription?.endDate && (
                 <div>
                   <p className="text-sm text-dark-500 mb-1">
                     {language === 'zh' ? '到期时间' : 'Expires On'}
                   </p>
-                  <p className="text-sm font-medium text-dark-700 dark:text-dark-300">
-                    {new Date(quota.endDate).toLocaleDateString('zh-CN')}
+                  <p className={`text-sm font-medium ${new Date(subscription.endDate) < new Date()
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-dark-700 dark:text-dark-300'
+                    }`}>
+                    {new Date(subscription.endDate).toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US')}
                   </p>
                 </div>
               )}
@@ -247,8 +345,8 @@ export default function DashboardPage() {
                   {language === 'zh' ? '图片生成 API' : 'Image Generation API'}
                 </p>
                 <p className="text-sm font-medium text-dark-700 dark:text-dark-300">
-                  {localStorage.getItem('imagine-engine-custom-image-enabled') === 'true' 
-                    ? (language === 'zh' ? '✅ 已启用自定义' : '✅ Custom Enabled') 
+                  {typeof window !== 'undefined' && localStorage.getItem('imagine-engine-custom-image-enabled') === 'true'
+                    ? (language === 'zh' ? '✅ 已启用自定义' : '✅ Custom Enabled')
                     : (language === 'zh' ? '默认服务' : 'Default Service')}
                 </p>
               </div>
@@ -258,8 +356,8 @@ export default function DashboardPage() {
                   {language === 'zh' ? 'AI 聊天 API' : 'AI Chat API'}
                 </p>
                 <p className="text-sm font-medium text-dark-700 dark:text-dark-300">
-                  {localStorage.getItem('imagine-engine-custom-chat-enabled') === 'true' 
-                    ? (language === 'zh' ? '✅ 已启用自定义' : '✅ Custom Enabled') 
+                  {typeof window !== 'undefined' && localStorage.getItem('imagine-engine-custom-chat-enabled') === 'true'
+                    ? (language === 'zh' ? '✅ 已启用自定义' : '✅ Custom Enabled')
                     : (language === 'zh' ? '默认服务' : 'Default Service')}
                 </p>
               </div>
@@ -305,7 +403,7 @@ export default function DashboardPage() {
                       {log.prompt || (language === 'zh' ? '无提示词' : 'No prompt')}
                     </p>
                     <p className="text-xs text-dark-500">
-                      {new Date(log.created_at).toLocaleString('zh-CN')} · {log.model_used}
+                      {new Date(log.created_at).toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US')} · {log.model_used}
                     </p>
                   </div>
                   <div className="text-sm font-semibold text-dark-700 dark:text-dark-300">
@@ -317,7 +415,16 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* 卡密兑换模态框 */}
+      <RedeemCodeModal
+        isOpen={showRedeemModal}
+        onClose={() => setShowRedeemModal(false)}
+        onSuccess={() => {
+          fetchDashboardData(); // 刷新数据
+          setShowRedeemModal(false);
+        }}
+      />
     </div>
   );
 }
-

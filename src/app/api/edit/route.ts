@@ -9,7 +9,7 @@ export const maxDuration = 60;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tool, image, mask, instruction, bgColor, originalDimensions, apiKey, baseUrl, model } = body;
+    const { tool, image, mask, instruction, bgColor, originalDimensions, apiKey, baseUrl, model, scale, quotaCost } = body;
 
     // ✅ 1. 验证用户登录（从请求头获取token）
     const authHeader = request.headers.get('authorization');
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     if (!token) {
       console.log('❌ 未登录用户尝试编辑图片（无token）');
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'AUTHENTICATION_REQUIRED',
         message: '请先登录后再编辑图片'
       }, { status: 401 });
@@ -37,10 +37,10 @@ export async function POST(request: NextRequest) {
     );
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user) {
       console.log('❌ Token无效或已过期');
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'AUTHENTICATION_REQUIRED',
         message: '请先登录后再编辑图片'
       }, { status: 401 });
@@ -48,13 +48,38 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ 用户已登录:', user.email);
 
-    // ✅ 2. 扣减配额（编辑也消耗1张配额）
+    // ✅ 2. 检查用户是否被禁用
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('is_disabled, disabled_reason')
+      .eq('id', user.id)
+      .single();
+
+    // 只有明确为true才禁用
+    if (profile?.is_disabled === true) {
+      console.log('🚫 禁用用户尝试编辑图片:', user.email, '原因:', profile.disabled_reason);
+      const reason = profile.disabled_reason || '您的账号暂时无法使用';
+      return NextResponse.json({
+        error: 'QUOTA_EXHAUSTED',
+        message: `抱歉，${reason}。如有疑问，请联系客服。`,
+        disabled: true,
+        disabledReason: reason
+      }, { status: 403 });
+    }
+
+    console.log('✅ 用户可以编辑图片:', user.email, 'is_disabled =', profile?.is_disabled);
+
+    // ✅ 3. 扣减配额（根据工具类型消耗不同配额）
+    // upscale工具消耗2张，其他工具消耗1张
+    const quotaAmount = tool === 'upscale' ? (quotaCost || 2) : 1;
+    
     const { data: deductData, error: deductError } = await supabase.rpc('deduct_user_quota', {
       p_user_id: user.id,
-      p_amount: 1,
-      p_action_type: 'edit_image',
+      p_amount: quotaAmount,
+      p_action_type: tool === 'upscale' ? 'upscale_image' : 'edit_image',
       p_metadata: {
         tool,
+        scale: scale || null,
         model: model || 'gemini-2.5-flash-image'
       }
     });
@@ -70,9 +95,9 @@ export async function POST(request: NextRequest) {
     console.log(`✅ 配额已扣减: 剩余=${deductData.remaining}`);
 
     // 验证必需参数
-    if (!tool || !['inpaint', 'remove_bg', 'id_photo'].includes(tool)) {
+    if (!tool || !['inpaint', 'remove_bg', 'id_photo', 'upscale'].includes(tool)) {
       return NextResponse.json(
-        { error: '请提供有效的编辑工具类型 (inpaint, remove_bg 或 id_photo)' },
+        { error: '请提供有效的编辑工具类型 (inpaint, remove_bg, id_photo 或 upscale)' },
         { status: 400 }
       );
     }
@@ -95,12 +120,13 @@ export async function POST(request: NextRequest) {
     console.log('收到图片编辑请求:', { tool, imageLength: image.length, instruction, bgColor });
 
     // 调用Nano Banana API，传递配置
-    const result = await editImage({ 
-      tool, 
-      image, 
+    const result = await editImage({
+      tool,
+      image,
       mask,
       instruction,
       bgColor,
+      scale,
       originalDimensions
     }, {
       apiKey,

@@ -26,6 +26,21 @@ const MODEL_PROVIDERS: ModelProvider[] = [
         id: 'gemini-2.5-flash-image-preview',
         name: 'Gemini 2.5 Flash Image',
         description: '快速生图，支持图像编辑'
+      },
+      {
+        id: 'gemini-3-pro-image-preview',
+        name: 'Gemini 3 Pro Image',
+        description: '最新Gemini 3 Pro图像生成'
+      },
+      {
+        id: 'gemini-3-pro-image-preview-2k',
+        name: 'Gemini 3 Pro Image 2K',
+        description: '高分辨率2K输出'
+      },
+      {
+        id: 'gemini-3-pro-image-preview-4k',
+        name: 'Gemini 3 Pro Image 4K',
+        description: '超高分辨率4K输出'
       }
     ]
   },

@@ -22,7 +22,8 @@ import {
   Lightbulb,
   Zap,
   Keyboard,
-  Bot
+  Bot,
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -621,9 +622,11 @@ CRITICAL: Generate in EXACTLY ${finalRatio} aspect ratio (${dimensions.width}x${
           setIsGenerating(false);
           return;
         }
-        if (data.error === 'QUOTA_EXHAUSTED') {
-          console.log('💰 配额已用完');
-          setError(language === 'zh' ? '配额已用完，请升级套餐或购买配额包' : 'Quota exhausted');
+        if (data.error === 'QUOTA_EXHAUSTED' || data.error?.includes('配额') || data.error?.includes('禁用') || data.error?.includes('抱歉')) {
+          console.log('💰 配额或账号问题:', data.error);
+          // 如果有message字段，使用message（更友好）
+          const errorMsg = data.message || data.error;
+          setError(errorMsg);
           setIsGenerating(false);
           return;
         }
@@ -876,8 +879,19 @@ CRITICAL: Generate in EXACTLY ${finalRatio} aspect ratio (${dimensions.width}x${
             </button>
 
             {error && (
-              <div className="card p-4 border-2 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
-                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+              <div className="card p-4 border-2 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 animate-fade-in">
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0">⚠️</div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-red-800 dark:text-red-300">{error}</p>
+                  </div>
+                  <button
+                    onClick={() => setError(null)}
+                    className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+                  >
+                    <X className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  </button>
+                </div>
               </div>
             )}
           </div>

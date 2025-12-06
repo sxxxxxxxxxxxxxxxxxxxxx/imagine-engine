@@ -81,8 +81,8 @@ export default function QuotaIndicator() {
       )}
       
       <div className="flex items-baseline gap-1 whitespace-nowrap">
-        <span className={`text-base font-semibold ${isLow ? 'text-red-600 dark:text-red-400' : 'text-dark-900 dark:text-dark-50'}`}>
-          {usedQuota}
+        <span className={`text-base font-semibold ${isLow ? 'text-red-600 dark:text-red-400' : 'text-primary-600 dark:text-primary-400'}`}>
+          {remaining}
         </span>
         <span className="text-xs text-dark-500">
           /{totalQuota}

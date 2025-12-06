@@ -25,9 +25,9 @@ export const PLANS = {
     name: 'Free',
     nameZh: '免费版',
     price: 0,
-    quota: 10,
-    features: ['10张/月', '基础功能', '社区支持'],
-    featuresZh: ['10张/月', '基础功能', '社区支持'],
+    quota: 20,
+    features: ['20张/月', '基础功能', '社区支持'],
+    featuresZh: ['20张/月', '基础功能', '社区支持'],
     recommended: false,
   },
   basic: {
@@ -100,4 +100,3 @@ export function yuanToCents(yuan: number): number {
 export function centsToYuan(cents: number): number {
   return cents / 100;
 }
-
