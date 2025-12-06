@@ -169,7 +169,7 @@ export default function ToolsIndexPage() {
         </div>
 
         {/* 升级引导 */}
-        <div className="card p-8 bg-gradient-to-r from-primary-500 to-purple-600 text-white text-center">
+        <div className="card p-8 bg-gradient-to-r from-primary-500 to-primary-700 text-white text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
             <Zap className="w-8 h-8" />
           </div>

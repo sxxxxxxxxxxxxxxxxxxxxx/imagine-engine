@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -22,24 +22,60 @@ import {
   X,
   Sun,
   Moon,
-  Languages
+  Languages,
+  Wrench
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function TopNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { user, isLoggedIn, signOut } = useAuth();
 
+  // 获取用户资料
+  const fetchUserProfile = async () => {
+    if (!user?.id) return;
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('display_name, username, avatar_url')
+        .eq('id', user.id)
+        .single();
+      
+      if (data) {
+        // 确保有名字显示（优先级：display_name > username > 邮箱前缀）
+        const displayName = data.display_name 
+          || data.username 
+          || user?.email?.split('@')[0] 
+          || '用户';
+        
+        setUserProfile({
+          ...data,
+          display_name: displayName
+        });
+      }
+    } catch (error) {
+      console.error('获取用户资料失败:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn && user?.id) {
+      fetchUserProfile();
+    }
+  }, [isLoggedIn, user?.id]);
+
   const navItems = [
     { icon: Sparkles, label: 'AI Studio', labelKey: 'nav.studio', path: '/create', descriptionZh: '图片创作', descriptionEn: 'Image Creation' },
     { icon: Wand2, label: 'Editor', labelKey: 'nav.editor', path: '/edit', descriptionZh: '图片编辑', descriptionEn: 'Image Editing' },
+    { icon: Wrench, label: 'Tools', labelKey: 'nav.tools', path: '/tools', descriptionZh: 'AI工具箱', descriptionEn: 'AI Tools' },
     { icon: Sparkles, label: 'Showcase', labelKey: 'nav.showcase', path: '/showcase', descriptionZh: '案例展示', descriptionEn: 'Case Studies' },
     { icon: Boxes, label: 'Playground', labelKey: 'nav.playground', path: '/playground', descriptionZh: 'AI 实验室', descriptionEn: 'AI Lab' },
-    { icon: FileText, label: 'Templates', labelKey: 'nav.templates', path: '/templates', descriptionZh: '模板库', descriptionEn: 'Template Library' },
     { icon: LayoutGrid, label: 'Gallery', labelKey: 'nav.gallery', path: '/gallery', descriptionZh: '作品画廊', descriptionEn: 'Artwork Gallery' },
     { icon: BookOpen, label: 'Docs', labelKey: 'nav.docs', path: '/docs', descriptionZh: '文档中心', descriptionEn: 'Documentation' },
   ];
@@ -123,11 +159,21 @@ export default function TopNav() {
                   <div className="relative">
                     <button
                       onClick={() => setShowUserMenu(!showUserMenu)}
-                      className="toolbar-btn flex items-center gap-2"
+                      className="toolbar-btn flex items-center gap-2 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
                     >
-                      <User className="w-5 h-5" />
-                      <span className="text-sm hidden md:inline max-w-[100px] truncate">
-                        {user?.email?.split('@')[0]}
+                      {userProfile?.avatar_url ? (
+                        <img
+                          src={userProfile.avatar_url}
+                          alt="Avatar"
+                          className="w-6 h-6 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-primary-500/30 flex items-center justify-center">
+                          <User className="w-4 h-4 text-primary-500" />
+                        </div>
+                      )}
+                      <span className="text-sm hidden md:inline max-w-[100px] truncate font-medium">
+                        {userProfile?.display_name || user?.email?.split('@')[0] || 'User'}
                       </span>
                     </button>
                     
@@ -139,6 +185,13 @@ export default function TopNav() {
                           className="block px-3 py-2 hover:bg-dark-100 dark:hover:bg-dark-800 rounded text-sm transition-colors"
                         >
                           {language === 'zh' ? '仪表板' : 'Dashboard'}
+                        </Link>
+                        <Link
+                          href="/profile"
+                          onClick={() => setShowUserMenu(false)}
+                          className="block px-3 py-2 hover:bg-dark-100 dark:hover:bg-dark-800 rounded text-sm transition-colors"
+                        >
+                          {language === 'zh' ? '个人资料' : 'Profile'}
                         </Link>
                         <div className="my-1 border-t border-dark-200 dark:border-dark-800" />
                         <button
@@ -232,4 +285,3 @@ export default function TopNav() {
     </>
   );
 }
-

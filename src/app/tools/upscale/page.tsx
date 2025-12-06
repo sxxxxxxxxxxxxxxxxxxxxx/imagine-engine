@@ -78,8 +78,8 @@ export default function UpscalePage() {
         
         {/* Hero区 */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-500/20 rounded-2xl mb-4">
-            <Maximize2 className="w-8 h-8 text-purple-500" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-500/20 rounded-2xl mb-4">
+            <Maximize2 className="w-8 h-8 text-primary-500" />
           </div>
           <h1 className="text-5xl font-bold text-dark-900 dark:text-dark-50 mb-4">
             {language === 'zh' ? 'AI图片放大工具' : 'AI Image Upscaler'}
@@ -112,7 +112,7 @@ export default function UpscalePage() {
                 
                 {!originalImage ? (
                   <label className="block cursor-pointer">
-                    <div className="border-4 border-dashed border-dark-300 dark:border-dark-700 hover:border-purple-400 dark:hover:border-purple-600 rounded-xl p-12 text-center transition-all">
+                    <div className="border-4 border-dashed border-dark-300 dark:border-dark-700 hover:border-primary-400 dark:hover:border-primary-600 rounded-xl p-12 text-center transition-all">
                       <Upload className="w-16 h-16 mx-auto mb-4 text-dark-400" />
                       <p className="text-dark-700 dark:text-dark-300 font-medium mb-2">
                         {language === 'zh' ? '点击上传' : 'Click to upload'}
@@ -155,8 +155,8 @@ export default function UpscalePage() {
                         onClick={() => setScale(factor)}
                         className={`p-4 rounded-lg border-2 transition-all ${
                           scale === factor
-                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/30 ring-2 ring-purple-200 dark:ring-purple-800'
-                            : 'border-dark-200 dark:border-dark-700 hover:border-purple-300'
+                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30 ring-2 ring-primary-200 dark:ring-primary-800'
+                            : 'border-dark-200 dark:border-dark-700 hover:border-primary-300'
                         }`}
                       >
                         <p className="text-2xl font-bold text-dark-900 dark:text-dark-50">{factor}x</p>
@@ -205,7 +205,7 @@ export default function UpscalePage() {
               
               {resultImage ? (
                 <div className="space-y-4">
-                  <img src={resultImage} alt="Upscaled" className="w-full rounded-lg border-2 border-purple-500" />
+                  <img src={resultImage} alt="Upscaled" className="w-full rounded-lg border-2 border-primary-500" />
                   <button
                     onClick={() => {
                       const a = document.createElement('a');
@@ -231,7 +231,7 @@ export default function UpscalePage() {
 
         {/* 引导升级 */}
         {!isLoggedIn && (
-          <div className="card p-8 bg-purple-50 dark:bg-purple-950/30 border-2 border-purple-200 dark:border-purple-800 text-center">
+          <div className="card p-8 bg-primary-50 dark:bg-primary-950/30 border-2 border-primary-200 dark:border-primary-800 text-center">
             <h3 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-3">
               {language === 'zh' ? '需要高质量放大？' : 'Need High-Quality Upscaling?'}
             </h3>

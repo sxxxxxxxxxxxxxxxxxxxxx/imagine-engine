@@ -114,7 +114,7 @@ export default function RemoveBgPage() {
             <Sparkles className="w-5 h-5 text-primary-600 dark:text-primary-400" />
             <span className="text-sm text-primary-800 dark:text-primary-300">
               {language === 'zh' ? '消耗1张配额' : '1 quota per use'}
-              {!isLoggedIn && (language === 'zh' ? ' · 注册送15张免费配额' : ' · Sign up for 15 free')}
+              {!isLoggedIn && (language === 'zh' ? ' · 注册送20张免费配额' : ' · Sign up for 20 free')}
             </span>
           </div>
         </div>
@@ -265,7 +265,7 @@ export default function RemoveBgPage() {
 
         {/* 底部引导CTA */}
         {resultImage && (
-          <div className="card p-8 bg-gradient-to-r from-primary-500 to-purple-600 text-white text-center">
+          <div className="card p-8 bg-gradient-to-r from-primary-500 to-primary-700 text-white text-center">
             <h3 className="text-2xl font-bold mb-3">
               {language === 'zh' ? '🎉 处理成功！需要批量处理？' : '🎉 Success! Need batch processing?'}
             </h3>
@@ -298,14 +298,14 @@ export default function RemoveBgPage() {
             </h3>
             <p className="text-dark-700 dark:text-dark-300 mb-6">
               {language === 'zh'
-                ? '注册即送15张免费额度，立即体验去背景功能！'
-                : 'Sign up for 15 free images, try background removal now!'}
+                ? '注册即送20张免费额度，立即体验去背景功能！'
+                : 'Sign up for 20 free images, try background removal now!'}
             </p>
             <button
               onClick={() => setShowAuthModal(true)}
               className="px-8 py-3 btn-primary font-bold text-lg"
             >
-              {language === 'zh' ? '免费注册（送15张）' : 'Sign Up Free (Get 15)'}
+              {language === 'zh' ? '免费注册（送20张）' : 'Sign Up Free (Get 20)'}
             </button>
           </div>
         )}

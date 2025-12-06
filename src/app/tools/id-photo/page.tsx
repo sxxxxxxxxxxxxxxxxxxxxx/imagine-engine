@@ -256,7 +256,7 @@ export default function IDPhotoPage() {
 
         {/* 底部引导CTA */}
         {!isLoggedIn && (
-          <div className="card p-8 bg-gradient-to-r from-primary-500 to-purple-600 text-white text-center">
+          <div className="card p-8 bg-gradient-to-r from-primary-500 to-primary-700 text-white text-center">
             <h3 className="text-2xl font-bold mb-3">
               {language === 'zh' ? '获取更多配额' : 'Get More Quota'}
             </h3>
