@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { ProviderManager } from '@/lib/apiProviders';
 import { Upload, Scissors, Download, Loader2, Check, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import AuthModal from '@/components/AuthModal';
 import { supabase } from '@/lib/supabase';
+import { downloadImage } from '@/lib/downloadUtils';
 
 export default function RemoveBgPage() {
   const { isLoggedIn } = useAuth();
@@ -14,8 +16,34 @@ export default function RemoveBgPage() {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [apiConfig, setApiConfig] = useState<{ apiKey: string; baseUrl: string; model: string } | null>(null);
+
+  // 从ProviderManager获取API配置（与生成图片页面一致）
+  useEffect(() => {
+    const loadConfig = () => {
+      const modelId = localStorage.getItem('imagine-engine-model') || 'gemini-2.5-flash-image';
+      const providerConfig = ProviderManager.getProviderByModelId(modelId);
+      
+      if (providerConfig) {
+        const apiKey = ProviderManager.getApiKey(providerConfig.provider.id) || '';
+        const baseUrl = providerConfig.provider.baseUrl;
+        setApiConfig({ apiKey, baseUrl, model: modelId });
+      } else {
+        // 回退到localStorage（兼容旧配置）
+        const apiKey = localStorage.getItem('imagine-engine-api-key') || '';
+        const baseUrl = localStorage.getItem('imagine-engine-base-url') || 'https://newapi.aicohere.org/v1/chat/completions';
+        setApiConfig({ apiKey, baseUrl, model: modelId });
+      }
+    };
+    
+    loadConfig();
+    // 监听配置变化
+    const interval = setInterval(loadConfig, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -38,6 +66,11 @@ export default function RemoveBgPage() {
       return;
     }
 
+    if (!apiConfig || !apiConfig.apiKey) {
+      setError(language === 'zh' ? '请先在设置中配置API密钥' : 'Please configure API key in settings');
+      return;
+    }
+
     setIsProcessing(true);
     setError(null);
 
@@ -52,7 +85,10 @@ export default function RemoveBgPage() {
         },
         body: JSON.stringify({
           tool: 'remove_bg',
-          image: originalImage
+          image: originalImage,
+          apiKey: apiConfig.apiKey,
+          baseUrl: apiConfig.baseUrl,
+          model: apiConfig.model
         })
       });
 
@@ -70,11 +106,17 @@ export default function RemoveBgPage() {
     }
   };
 
-  const downloadImage = (url: string, filename: string) => {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
+  const handleDownload = async () => {
+    if (!resultImage) return;
+    setIsDownloading(true);
+    setError(null);
+    try {
+      await downloadImage(resultImage, 'no-background.png');
+    } catch (error) {
+      setError(language === 'zh' ? '下载失败，请重试' : 'Download failed, please try again');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -82,37 +124,37 @@ export default function RemoveBgPage() {
       <div className="content-wrapper max-w-6xl mx-auto">
 
         {/* Hero区 */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-500/20 rounded-2xl mb-4">
-            <Scissors className="w-8 h-8 text-primary-500" />
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary-500/20 rounded-2xl mb-6">
+            <Scissors className="w-10 h-10 text-primary-500" />
           </div>
           <h1 className="text-5xl font-bold text-dark-900 dark:text-dark-50 mb-4">
             {language === 'zh' ? '智能去背景工具' : 'Smart Background Remover'}
           </h1>
-          <p className="text-xl text-dark-600 dark:text-dark-400 mb-6">
+          <p className="text-xl text-dark-600 dark:text-dark-400 mb-8 max-w-2xl mx-auto leading-relaxed">
             {language === 'zh'
               ? '1秒抠图，效果堪比PS专业设计师'
               : '1-second cutout, professional PS-level results'}
           </p>
 
           {/* 适用场景 */}
-          <div className="flex flex-wrap justify-center gap-2 mb-8">
+          <div className="flex flex-wrap justify-center gap-3 mb-8">
             {[
               { icon: '🛍️', text: language === 'zh' ? '电商产品图' : 'E-commerce' },
               { icon: '👤', text: language === 'zh' ? '个人照片' : 'Portrait' },
               { icon: '🎨', text: language === 'zh' ? '设计素材' : 'Design Assets' },
               { icon: '📸', text: language === 'zh' ? '证件照' : 'ID Photos' }
             ].map((item) => (
-              <span key={item.text} className="px-4 py-2 bg-dark-100 dark:bg-dark-800 text-dark-700 dark:text-dark-300 rounded-full text-sm font-medium">
+              <span key={item.text} className="px-5 py-2.5 bg-dark-100 dark:bg-dark-800 text-dark-700 dark:text-dark-300 rounded-lg text-sm font-medium border-2 border-transparent hover:border-primary-300 transition-all">
                 {item.icon} {item.text}
               </span>
             ))}
           </div>
 
           {/* 配额提示 */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 dark:bg-primary-950/30 border border-primary-200 dark:border-primary-800 rounded-lg">
+          <div className="inline-flex items-center gap-2 px-5 py-3 bg-primary-50 dark:bg-primary-950/30 border border-primary-200 dark:border-primary-800 rounded-lg">
             <Sparkles className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-            <span className="text-sm text-primary-800 dark:text-primary-300">
+            <span className="text-sm font-medium text-primary-800 dark:text-primary-300">
               {language === 'zh' ? '消耗1张配额' : '1 quota per use'}
               {!isLoggedIn && (language === 'zh' ? ' · 注册送20张免费配额' : ' · Sign up for 20 free')}
             </span>
@@ -123,21 +165,25 @@ export default function RemoveBgPage() {
         <div className="grid md:grid-cols-2 gap-8 mb-12">
 
           {/* 原图上传区 */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-semibold text-dark-900 dark:text-dark-50 flex items-center gap-2">
-              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary-500 text-white text-sm font-bold">1</span>
-              {language === 'zh' ? '原始图片' : 'Original'}
-            </h3>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary-500 flex items-center justify-center">
+                <span className="text-white text-sm font-bold">1</span>
+              </div>
+              <h3 className="text-xl font-semibold text-dark-900 dark:text-dark-50">
+                {language === 'zh' ? '原始图片' : 'Original'}
+              </h3>
+            </div>
 
             <div className="card p-6">
               {!originalImage ? (
                 <label className="block cursor-pointer">
-                  <div className="border-4 border-dashed border-dark-300 dark:border-dark-700 hover:border-primary-400 dark:hover:border-primary-600 rounded-xl p-12 text-center transition-all">
-                    <Upload className="w-16 h-16 mx-auto mb-4 text-dark-400" />
-                    <p className="text-dark-700 dark:text-dark-300 font-medium mb-2">
+                  <div className="border-4 border-dashed border-dark-300 dark:border-dark-700 hover:border-primary-400 dark:hover:border-primary-600 rounded-xl p-16 text-center transition-all">
+                    <Upload className="w-20 h-20 mx-auto mb-6 text-dark-400 dark:text-dark-500" />
+                    <p className="text-dark-700 dark:text-dark-300 font-semibold mb-2 text-lg">
                       {language === 'zh' ? '点击或拖拽上传图片' : 'Click or drag to upload'}
                     </p>
-                    <p className="text-sm text-dark-500">
+                    <p className="text-sm text-dark-500 dark:text-dark-400">
                       {language === 'zh' ? '支持JPG、PNG格式，最大10MB' : 'JPG, PNG, max 10MB'}
                     </p>
                   </div>
@@ -169,16 +215,16 @@ export default function RemoveBgPage() {
               <button
                 onClick={handleRemoveBackground}
                 disabled={isProcessing}
-                className="w-full btn-primary py-4 text-lg font-bold shadow-lg hover:shadow-xl disabled:opacity-50"
+                className="w-full btn-primary py-4 text-base font-semibold shadow-md hover:shadow-lg disabled:opacity-50 transition-all"
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <Loader2 className="w-5 h-5 animate-spin" />
                     {language === 'zh' ? '处理中...' : 'Processing...'}
                   </>
                 ) : (
                   <>
-                    <Scissors className="w-6 h-6" />
+                    <Scissors className="w-5 h-5" />
                     {language === 'zh' ? '开始去背景（1张配额）' : 'Remove Background (1 quota)'}
                   </>
                 )}
@@ -196,11 +242,15 @@ export default function RemoveBgPage() {
           </div>
 
           {/* 结果展示区 */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-semibold text-dark-900 dark:text-dark-50 flex items-center gap-2">
-              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-green-500 text-white text-sm font-bold">2</span>
-              {language === 'zh' ? '去背景后' : 'Result'}
-            </h3>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary-500 flex items-center justify-center">
+                <span className="text-white text-sm font-bold">2</span>
+              </div>
+              <h3 className="text-xl font-semibold text-dark-900 dark:text-dark-50">
+                {language === 'zh' ? '去背景后' : 'Result'}
+              </h3>
+            </div>
 
             <div className="card p-6 bg-checkerboard">
               {resultImage ? (
@@ -210,11 +260,21 @@ export default function RemoveBgPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <button
-                      onClick={() => downloadImage(resultImage, 'no-background.png')}
-                      className="py-3 btn-primary"
+                      onClick={handleDownload}
+                      disabled={isDownloading}
+                      className="py-3 btn-primary disabled:opacity-50"
                     >
-                      <Download className="w-5 h-5" />
-                      {language === 'zh' ? '下载PNG' : 'Download PNG'}
+                      {isDownloading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          {language === 'zh' ? '下载中...' : 'Downloading...'}
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-5 h-5" />
+                          {language === 'zh' ? '下载PNG' : 'Download PNG'}
+                        </>
+                      )}
                     </button>
                     <button
                       onClick={() => {
@@ -228,9 +288,9 @@ export default function RemoveBgPage() {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-20 text-dark-500">
-                  <Scissors className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p>{language === 'zh' ? '处理后的结果将在这里显示' : 'Result will appear here'}</p>
+                <div className="text-center py-20 bg-dark-50 dark:bg-dark-800 rounded-xl border-2 border-dashed border-dark-300 dark:border-dark-700">
+                  <Scissors className="w-20 h-20 mx-auto mb-4 text-dark-400 dark:text-dark-500" />
+                  <p className="text-dark-500 dark:text-dark-400 font-medium">{language === 'zh' ? '处理后的结果将在这里显示' : 'Result will appear here'}</p>
                 </div>
               )}
             </div>
@@ -265,7 +325,7 @@ export default function RemoveBgPage() {
 
         {/* 底部引导CTA */}
         {resultImage && (
-          <div className="card p-8 bg-gradient-to-r from-primary-500 to-primary-700 text-white text-center">
+          <div className="card p-8 bg-primary-500 text-white text-center">
             <h3 className="text-2xl font-bold mb-3">
               {language === 'zh' ? '🎉 处理成功！需要批量处理？' : '🎉 Success! Need batch processing?'}
             </h3>
