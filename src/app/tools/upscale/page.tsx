@@ -284,30 +284,6 @@ export default function UpscalePage() {
           </div>
         </div>
 
-        {/* 引导升级 */}
-        {!isLoggedIn && (
-          <div className="card p-8 bg-gradient-to-br from-primary-500 to-primary-600 text-white border-2 border-primary-400 shadow-lg shadow-primary-500/30 text-center">
-            <h3 className="text-2xl font-bold text-white mb-3">
-              {language === 'zh' ? '需要更多配额？' : 'Need More Quota?'}
-            </h3>
-            <p className="text-white/90 mb-6">
-              {language === 'zh' 
-                ? '注册即送20张免费额度！升级Basic版本，200张配额每月，包含图片放大、去背景等8+工具！'
-                : 'Sign up for 20 free images! Upgrade to Basic: 200 quota/month, includes upscaling, remove bg & 8+ tools!'}
-            </p>
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={() => setShowAuthModal(true)}
-                className="px-6 py-3 btn-primary"
-              >
-                {language === 'zh' ? '免费注册（送20张）' : 'Sign Up Free (Get 20)'}
-              </button>
-              <Link href="/pricing" className="px-6 py-3 btn-outline">
-                {language === 'zh' ? '查看定价' : 'View Pricing'}
-              </Link>
-            </div>
-          </div>
-        )}
 
       </div>
 

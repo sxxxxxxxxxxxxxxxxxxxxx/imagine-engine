@@ -325,30 +325,6 @@ export default function StyleTransferPage() {
           </ul>
         </div>
 
-        {/* 底部引导CTA */}
-        {!isLoggedIn && (
-          <div className="card p-8 bg-primary-500 text-white text-center mt-12">
-            <h3 className="text-2xl font-bold mb-3">
-              {language === 'zh' ? '免费体验艺术风格转换' : 'Try Style Transfer Free'}
-            </h3>
-            <p className="text-white/90 mb-6 max-w-2xl mx-auto">
-              {language === 'zh' 
-                ? '注册即送20张免费额度！升级Basic版本，200张配额每月，包含风格转换、去背景等8+工具！'
-                : 'Sign up for 20 free images! Upgrade to Basic: 200 quota/month, includes style transfer, remove bg & 8+ tools!'}
-            </p>
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={() => setShowAuthModal(true)}
-                className="px-6 py-3 bg-white text-primary-700 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-              >
-                {language === 'zh' ? '免费注册（送20张）' : 'Sign Up Free (Get 20)'}
-              </button>
-              <Link href="/pricing" className="px-6 py-3 bg-white/20 text-white rounded-lg font-semibold hover:bg-white/30 transition-colors">
-                {language === 'zh' ? '查看定价' : 'View Pricing'}
-              </Link>
-            </div>
-          </div>
-        )}
 
       </div>
 
