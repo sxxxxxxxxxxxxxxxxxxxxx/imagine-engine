@@ -323,52 +323,6 @@ export default function RemoveBgPage() {
           </ul>
         </div>
 
-        {/* 底部引导CTA */}
-        {resultImage && (
-          <div className="card p-8 bg-primary-500 text-white text-center">
-            <h3 className="text-2xl font-bold mb-3">
-              {language === 'zh' ? '🎉 处理成功！需要批量处理？' : '🎉 Success! Need batch processing?'}
-            </h3>
-            <p className="mb-6 text-white/90">
-              {language === 'zh'
-                ? 'Basic版本200张配额随便用，包含全部8+工具，每月仅需￥29！'
-                : 'Basic plan: 200 quota with 8+ tools, only ￥29/month!'}
-            </p>
-            <div className="flex gap-4 justify-center">
-              <Link
-                href="/pricing"
-                className="px-8 py-3 bg-white text-primary-600 rounded-lg font-bold hover:bg-dark-50 transition-all shadow-lg"
-              >
-                {language === 'zh' ? '升级Basic版（节省93%）' : 'Upgrade to Basic (Save 93%)'}
-              </Link>
-              <Link
-                href="/tools"
-                className="px-8 py-3 bg-white/20 hover:bg-white/30 text-white rounded-lg font-bold transition-all border-2 border-white"
-              >
-                {language === 'zh' ? '探索更多工具' : 'Explore More Tools'}
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {!isLoggedIn && !resultImage && originalImage && (
-          <div className="card p-8 bg-dark-50 dark:bg-dark-800 border-2 border-dashed border-primary-300 dark:border-primary-700 text-center">
-            <h3 className="text-xl font-bold text-dark-900 dark:text-dark-50 mb-3">
-              {language === 'zh' ? '🎁 限时福利' : '🎁 Limited Offer'}
-            </h3>
-            <p className="text-dark-700 dark:text-dark-300 mb-6">
-              {language === 'zh'
-                ? '注册即送20张免费额度，立即体验去背景功能！'
-                : 'Sign up for 20 free images, try background removal now!'}
-            </p>
-            <button
-              onClick={() => setShowAuthModal(true)}
-              className="px-8 py-3 btn-primary font-bold text-lg"
-            >
-              {language === 'zh' ? '免费注册（送20张）' : 'Sign Up Free (Get 20)'}
-            </button>
-          </div>
-        )}
 
       </div>
 
