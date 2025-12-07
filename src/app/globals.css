@@ -234,6 +234,7 @@
 
   .content-wrapper {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
+    position: relative;
   }
 
   /* ========================================
@@ -445,6 +446,25 @@
   animation: gradient-shift 3s ease infinite;
 }
 
+/* 评论滚动动画 - 全屏无边界无缝循环 */
+@keyframes testimonial-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-33.333333%));
+  }
+}
+
+.animate-testimonial-scroll {
+  animation: testimonial-scroll 40s linear infinite;
+  will-change: transform;
+}
+
+.animate-testimonial-scroll.paused {
+  animation-play-state: paused;
+}
+
 /* 淡入动画 */
 @keyframes fadeIn {
   from {
@@ -459,4 +479,139 @@
 
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
+}
+
+/* ========================================
+   高级动画效果 - 交互媒体设计优化
+   ======================================== */
+
+/* Aurora 极光背景动画 */
+@keyframes aurora {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes aurora-reverse {
+  0% { transform: rotate(360deg) scale(1.2); }
+  50% { transform: rotate(180deg) scale(1); }
+  100% { transform: rotate(0deg) scale(1.2); }
+}
+
+.animate-aurora {
+  animation: aurora 60s linear infinite;
+}
+
+.animate-aurora-reverse {
+  animation: aurora-reverse 50s linear infinite;
+}
+
+/* Blob 动态变形动画 */
+@keyframes blob {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+.animate-blob {
+  animation: blob 10s ease-in-out infinite;
+}
+
+/* 网格移动动画 */
+@keyframes grid-move {
+  0% { transform: perspective(500px) rotateX(60deg) translateY(0) scale(2); }
+  100% { transform: perspective(500px) rotateX(60deg) translateY(40px) scale(2); }
+}
+
+.animate-grid-move {
+  animation: grid-move 20s linear infinite;
+}
+
+/* 渐变文字动画 */
+@keyframes gradient-x {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 5s ease infinite;
+}
+
+/* 淡入向上动画 */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-fade-in-up.delay-100 {
+  animation-delay: 100ms;
+}
+
+.animate-fade-in-up.delay-200 {
+  animation-delay: 200ms;
+}
+
+.animate-fade-in-up.delay-300 {
+  animation-delay: 300ms;
+}
+
+/* 边框光束动画 */
+@keyframes border-beam {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-border-beam {
+  background-size: 200% 100%;
+  animation: border-beam 3s linear infinite;
+}
+
+/* 慢速脉冲动画 */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 淡入动画（用于工具提示等） */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+/* Shimmer 闪烁效果 */
+@keyframes shimmer {
+  0% { transform: translateX(-100%) skewX(-12deg); }
+  100% { transform: translateX(200%) skewX(-12deg); }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
 }
