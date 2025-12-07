@@ -131,22 +131,39 @@ export default function AIIconGeneratorPage() {
 
       const enhancedPrompt = `${prompt}, ${styleDescriptions[iconStyle]}, ${language === 'zh' ? '图标设计' : 'icon design'}, ${selectedColorScheme ? `${language === 'zh' ? '使用' : 'use'} ${selectedColorScheme.colors.join(' and ')} ${language === 'zh' ? '颜色' : 'colors'}` : ''}, ${language === 'zh' ? '透明背景' : 'transparent background'}, ${language === 'zh' ? '正方形画布' : 'square canvas'}, ${iconSize}x${iconSize} ${language === 'zh' ? '像素' : 'pixels'}, ${language === 'zh' ? '高质量' : 'high quality'}, ${language === 'zh' ? '矢量风格' : 'vector style'}`;
 
-      const response = await fetch('/api/generate-image', {
+      // 获取用户session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error(language === 'zh' ? '请先登录' : 'Please login first');
+      }
+
+      const response = await fetch('/api/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({
           prompt: enhancedPrompt,
           model: apiConfig.model,
           apiKey: apiConfig.apiKey,
           baseUrl: apiConfig.baseUrl,
-          size: `${iconSize}x${iconSize}`,
-          quality: 'standard',
+          aspectRatio: '1:1', // 图标使用1:1比例
         }),
       });
 
+      // 检查响应类型
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('API返回非JSON响应:', text.substring(0, 200));
+        throw new Error(language === 'zh' ? '服务器返回了错误响应，请稍后重试' : 'Server returned an error response, please try again later');
+      }
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Generation failed');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || errorData.message || 'Generation failed');
       }
 
       const data = await response.json();
@@ -161,22 +178,13 @@ export default function AIIconGeneratorPage() {
         }, ...prev.slice(0, 9)]);
         
         // 记录工具使用
-        recordToolUsage('ai-icon-generator', 
-          { zh: 'AI图标生成器', en: 'AI Icon Generator' },
-          '/tools/ai-icon-generator',
-          Shapes
+        recordToolUsage(
+          'ai-icon-generator',
+          language === 'zh' ? 'AI图标生成器' : 'AI Icon Generator',
+          '/tools/ai-icon-generator'
         );
 
-        // 扣除配额
-        if (user) {
-          const { error: quotaError } = await supabase.rpc('consume_quota', {
-            user_id: user.id,
-            amount: 2,
-          });
-          if (quotaError) {
-            console.error('Quota consumption error:', quotaError);
-          }
-        }
+        // 配额已在API中扣除，这里不需要再次扣除
 
         toastManager.success(language === 'zh' ? '图标生成成功！' : 'Icon generated successfully!');
       } else {
