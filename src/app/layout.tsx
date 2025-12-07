@@ -8,6 +8,7 @@ import FloatingBall from '@/components/AIAssistant/FloatingBall';
 import NetworkStatus from '@/components/NetworkStatus';
 import InitializeConfig from '@/components/InitializeConfig';
 import ConfigAlert from '@/components/ConfigAlert';
+import ToastContainer from '@/components/Toast';
 import dynamic from 'next/dynamic';
 
 // 懒加载非关键组件
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   title: 'Imagine Engine - Professional AI Image Creation Platform',
   description: 'Tech-focused AI image generation platform. Multi-model support, batch processing, and developer-friendly tools.',
   keywords: [
-    'AI Image Generation',
+    'AI Image Generation', 
     'Batch Processing',
     'Multi-Model',
     'Developer Tools',
@@ -85,10 +86,11 @@ export default function RootLayout({
               <FloatingBall />
               <NetworkStatus />
               <WelcomeModal />
+              <ToastContainer />
             </LanguageProvider>
           </ThemeProvider>
         </ErrorBoundary>
-
+        
         {/* Vercel Analytics - 性能监控 */}
         {process.env.NODE_ENV === 'production' && (
           <>

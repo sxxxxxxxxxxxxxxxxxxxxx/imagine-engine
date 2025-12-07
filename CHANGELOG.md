@@ -438,3 +438,4 @@ await downloadImage(imageUrl, filename);
 ## v2.0.0 - 2025-01-15
 
 初始版本发布
+

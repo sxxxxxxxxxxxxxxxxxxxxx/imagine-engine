@@ -54,6 +54,10 @@ const AuthModal = dynamic(() => import('@/components/AuthModal'), {
   ssr: false
 });
 
+const ImageActions = dynamic(() => import('@/components/ImageActions'), {
+  ssr: false
+});
+
 export default function CreatePage() {
   const { language, t } = useLanguage();
   const { user, isLoggedIn } = useAuth();  // ✅ 认证状态
@@ -279,6 +283,12 @@ export default function CreatePage() {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
+        const result = e.target?.result;
+        if (!result || typeof result !== 'string') {
+          reject(new Error('Failed to read file'));
+          return;
+        }
+        
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
@@ -304,14 +314,14 @@ export default function CreatePage() {
             ctx.drawImage(img, 0, 0, width, height);
             // 压缩质量0.8，减小文件大小
             const compressed = canvas.toDataURL('image/jpeg', 0.8);
-            console.log(`🗜️ 图片压缩: ${Math.round(e.target?.result.toString().length / 1024)}KB → ${Math.round(compressed.length / 1024)}KB`);
+            console.log(`🗜️ 图片压缩: ${Math.round(result.length / 1024)}KB → ${Math.round(compressed.length / 1024)}KB`);
             resolve(compressed);
           } else {
             reject(new Error('Canvas context creation failed'));
           }
         };
         img.onerror = reject;
-        img.src = e.target?.result as string;
+        img.src = result;
       };
       reader.onerror = reject;
       reader.readAsDataURL(file);
@@ -1076,58 +1086,72 @@ CRITICAL: Generate in EXACTLY ${finalRatio} aspect ratio (${dimensions.width}x${
                     </div>
                   )}
 
-                  {generatedImages.map((item, idx) => (
-                    <div key={`${item.timestamp}-${idx}`} className="group relative card-hover">
-                      <div className="relative aspect-square bg-dark-50 dark:bg-dark-900 rounded-lg overflow-hidden flex items-center justify-center p-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setGeneratedImages(prev => prev.filter((_, i) => i !== idx));
-                          }}
-                          className="absolute top-2 right-2 w-7 h-7 bg-accent-500/90 hover:bg-accent-600 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                  {generatedImages.map((item, idx) => {
+                    const imageId = `img-${item.timestamp}-${idx}`;
+                    return (
+                      <div key={`${item.timestamp}-${idx}`} className="group relative card-hover">
+                        <div className="relative aspect-square bg-dark-50 dark:bg-dark-900 rounded-lg overflow-hidden flex items-center justify-center p-2">
+                          {/* 删除按钮 */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setGeneratedImages(prev => prev.filter((_, i) => i !== idx));
+                            }}
+                            className="absolute top-2 right-2 w-7 h-7 bg-accent-500/90 hover:bg-accent-600 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          
+                          {/* 图片操作按钮（收藏、分享等） */}
+                          <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <ImageActions
+                              imageId={imageId}
+                              imageUrl={item.url}
+                              prompt={item.prompt}
+                              onDownload={() => handleDownload(item.url, `imagine-${Date.now()}.png`)}
+                            />
+                          </div>
+                          
+                          <img
+                            src={item.url}
+                            alt={item.prompt}
+                            className="max-w-full max-h-full object-contain rounded"
+                            loading="lazy"
+                          />
+                        </div>
                         
-                        <img
-                          src={item.url}
-                          alt={item.prompt}
-                          className="max-w-full max-h-full object-contain rounded"
-                          loading="lazy"
-                        />
-                      </div>
-                      
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="absolute bottom-0 left-0 right-0 p-3">
-                          <p className="text-white text-sm line-clamp-2 mb-3">{item.prompt}</p>
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                handleDownload(item.url, `imagine-${Date.now()}.png`);
-                              }}
-                              className="flex-1 btn-secondary text-xs py-1.5"
-                            >
-                              <Download className="w-3 h-3" />
-                              {language === 'zh' ? '下载' : 'Download'}
-                            </button>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                sessionStorage.setItem('edit-image', item.url);
-                                window.location.href = '/edit';
-                              }}
-                              className="flex-1 btn-primary text-xs py-1.5"
-                            >
-                              <Wand2 className="w-3 h-3" />
-                              {language === 'zh' ? '编辑' : 'Edit'}
-                            </button>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                          <div className="absolute bottom-0 left-0 right-0 p-3 pointer-events-auto">
+                            <p className="text-white text-sm line-clamp-2 mb-3">{item.prompt}</p>
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  handleDownload(item.url, `imagine-${Date.now()}.png`);
+                                }}
+                                className="flex-1 btn-secondary text-xs py-1.5"
+                              >
+                                <Download className="w-3 h-3" />
+                                {language === 'zh' ? '下载' : 'Download'}
+                              </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  sessionStorage.setItem('edit-image', item.url);
+                                  window.location.href = '/edit';
+                                }}
+                                className="flex-1 btn-primary text-xs py-1.5"
+                              >
+                                <Wand2 className="w-3 h-3" />
+                                {language === 'zh' ? '编辑' : 'Edit'}
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
