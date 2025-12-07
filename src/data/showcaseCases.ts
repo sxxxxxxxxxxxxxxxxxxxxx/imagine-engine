@@ -5,6 +5,9 @@
  * 持续更新中...
  */
 
+// 导入 GPT-4o 提示词案例
+import { gpt4oPromptsCases } from './gpt4oPromptsCases';
+
 export interface ShowcaseCase {
   id: number;
   title: string;
@@ -310,6 +313,10 @@ export const showcaseCases: ShowcaseCase[] = [
   {id: 108, title: '创建Line印章图片', titleEn: 'Create LINE Stamps', description: '创建Line风格表情印章', descriptionEn: 'Create LINE-style emoji stamps', inputImages: [`${BASE_URL}/case108/input1.jpg`], outputImage: `${BASE_URL}/case108/output.jpg`, prompt: '角色表、面部表情、喜悦、愤怒、悲伤、快乐', promptEn: 'Character sheet, facial expressions, joy, anger, sadness, happiness', category: 'portrait', difficulty: 'medium', tags: ['表情包', 'LINE', '印章'], author: '@emakiscroll', modelUsed: 'Gemini 2.5 Flash', requiresInput: true, featured: false },
   {id: 109, title: '对童年的自己治疗', titleEn: 'Therapy with Childhood Self', description: '治疗室中成人与童年自己对话', descriptionEn: 'Adult dialoguing with childhood self', inputImages: [`${BASE_URL}/case109/output.jpg`], outputImage: `${BASE_URL}/case109/output.jpg`, prompt: '超逼真极简主义治疗室场景。同一人以两种年龄状态并排而坐', promptEn: 'Hyper-realistic minimalist therapy room. Same person in two age states sitting side by side', category: 'art', difficulty: 'hard', tags: ['治愈系', '心理', '创意'], author: '@samann_ai', modelUsed: 'Gemini 2.5 Flash', requiresInput: true, featured: true },
   {id: 110, title: 'PIXAR风格图片', titleEn: 'Pixar Style Avatar', description: '生成Pixar风格3D头像', descriptionEn: 'Generate Pixar-style 3D avatar', inputImages: [`${BASE_URL}/case110/output.jpg`], outputImage: `${BASE_URL}/case110/output.jpg`, prompt: '生成一幅3D头像。Pixar风格', promptEn: 'Generate 3D avatar. Pixar style', category: 'portrait', difficulty: 'medium', tags: ['Pixar', '3D头像', '卡通'], author: '@NanoBanana_labs', modelUsed: 'Gemini 2.5 Flash', requiresInput: true, featured: true },
+  
+  // === GPT-4o 图片提示词案例 (630个) ===
+  // 导入自: https://github.com/songguoxs/gpt4o-image-prompts
+  ...gpt4oPromptsCases,
 ];
 
 // 分类翻译

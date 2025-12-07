@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateImage } from '@/lib/bananaApi';
 import { createClient } from '@supabase/supabase-js';
+import { calculateQuotaCost } from '@/lib/quotaMultiplier';
 
 // App Router配置（增加函数超时和内存）
 export const runtime = 'nodejs';
@@ -77,21 +78,25 @@ export async function POST(request: NextRequest) {
     
     console.log('✅ 用户可以生成图片:', user.email, 'is_disabled =', profile?.is_disabled);
 
-    // ✅ 3. 检查配额
+    // ✅ 3. 计算配额消耗（根据模型）
+    const quotaCost = calculateQuotaCost(1, model);
+    
+    // ✅ 4. 检查配额
     const { data: quotaData, error: quotaError } = await supabase.rpc('check_user_quota', {
       p_user_id: user.id
     });
 
-    if (quotaError || !quotaData || quotaData.remaining <= 0) {
-      console.log('❌ 配额不足:', user.email);
+    if (quotaError || !quotaData || quotaData.remaining < quotaCost) {
+      console.log(`❌ 配额不足: 需要${quotaCost}张，剩余${quotaData?.remaining || 0}张`);
       return NextResponse.json({
         error: 'QUOTA_EXHAUSTED',
-        message: '配额已用完，请升级套餐或购买配额包',
-        remaining: 0
+        message: `配额不足，需要${quotaCost}张，当前剩余${quotaData?.remaining || 0}张`,
+        remaining: quotaData?.remaining || 0,
+        required: quotaCost
       }, { status: 403 });
     }
 
-    console.log(`✅ 配额充足: 剩余=${quotaData.remaining}`);
+    console.log(`✅ 配额充足: 需要${quotaCost}张，剩余=${quotaData.remaining}`);
 
     // ✅ 多图融合支持
     const hasMultipleImages = referenceImages && Array.isArray(referenceImages) && referenceImages.length > 1;
@@ -135,17 +140,18 @@ export async function POST(request: NextRequest) {
 
     console.log('图片生成成功:', result.imageUrl);
 
-    // ✅ 3. 生成成功后才扣减配额
+    // ✅ 5. 生成成功后才扣减配额（根据模型计算倍数）
     const { data: deductData, error: deductError } = await supabase.rpc('deduct_user_quota', {
       p_user_id: user.id,
-      p_amount: 1,
+      p_amount: quotaCost, // 使用计算后的配额数量
       p_action_type: 'generate_image',
       p_metadata: {
         prompt: prompt.substring(0, 200),
         model: model || 'gemini-2.5-flash-image',
         style: style || 'realistic',
         aspectRatio: aspectRatio || 'auto',
-        image_url: result.imageUrl
+        image_url: result.imageUrl,
+        quota_multiplier: quotaCost // 记录配额倍数
       }
     });
 
@@ -153,7 +159,7 @@ export async function POST(request: NextRequest) {
       console.error('❌ 配额扣减失败（但图片已生成）:', deductError);
       // 图片已生成，仍然返回，但提示配额扣减失败
     } else {
-      console.log(`✅ 配额已扣减: 剩余=${deductData.remaining}`);
+      console.log(`✅ 配额已扣减: ${quotaCost}张，剩余=${deductData.remaining}`);
     }
 
     return NextResponse.json({
@@ -162,7 +168,8 @@ export async function POST(request: NextRequest) {
       backendResized: result.backendResized || false,
       originalDimensions: result.originalDimensions,
       aspectRatio: aspectRatio,
-      quota_remaining: deductData?.remaining || quotaData.remaining - 1  // ✅ 返回剩余配额
+      quota_remaining: deductData?.remaining || quotaData.remaining - quotaCost, // ✅ 返回剩余配额
+      quota_cost: quotaCost // 返回本次消耗的配额
     });
 
   } catch (error) {

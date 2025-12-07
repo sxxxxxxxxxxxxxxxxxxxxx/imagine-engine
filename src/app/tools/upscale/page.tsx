@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { ProviderManager } from '@/lib/apiProviders';
 import { Upload, Maximize2, Download, Loader2, Sparkles, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import AuthModal from '@/components/AuthModal';
 import { supabase } from '@/lib/supabase';
+import { downloadImage } from '@/lib/downloadUtils';
 
 export default function UpscalePage() {
   const { isLoggedIn } = useAuth();
@@ -15,8 +17,34 @@ export default function UpscalePage() {
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [scale, setScale] = useState(2); // 默认2倍放大
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [apiConfig, setApiConfig] = useState<{ apiKey: string; baseUrl: string; model: string } | null>(null);
+
+  // 从ProviderManager获取API配置（与生成图片页面一致）
+  useEffect(() => {
+    const loadConfig = () => {
+      const modelId = localStorage.getItem('imagine-engine-model') || 'gemini-2.5-flash-image';
+      const providerConfig = ProviderManager.getProviderByModelId(modelId);
+      
+      if (providerConfig) {
+        const apiKey = ProviderManager.getApiKey(providerConfig.provider.id) || '';
+        const baseUrl = providerConfig.provider.baseUrl;
+        setApiConfig({ apiKey, baseUrl, model: modelId });
+      } else {
+        // 回退到localStorage（兼容旧配置）
+        const apiKey = localStorage.getItem('imagine-engine-api-key') || '';
+        const baseUrl = localStorage.getItem('imagine-engine-base-url') || 'https://newapi.aicohere.org/v1/chat/completions';
+        setApiConfig({ apiKey, baseUrl, model: modelId });
+      }
+    };
+    
+    loadConfig();
+    // 监听配置变化
+    const interval = setInterval(loadConfig, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,14 +67,16 @@ export default function UpscalePage() {
       return;
     }
 
+    if (!apiConfig || !apiConfig.apiKey) {
+      setError(language === 'zh' ? '请先在设置中配置API密钥' : 'Please configure API key in settings');
+      return;
+    }
+
     setIsProcessing(true);
     setError(null);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
-      // 计算配额消耗（upscale消耗2张配额）
-      const quotaCost = 2;
       
       const response = await fetch('/api/edit', {
         method: 'POST',
@@ -58,7 +88,9 @@ export default function UpscalePage() {
           tool: 'upscale',
           image: originalImage,
           scale,
-          quotaCost // 传递配额消耗信息
+          apiKey: apiConfig.apiKey,
+          baseUrl: apiConfig.baseUrl,
+          model: apiConfig.model
         })
       });
 
@@ -81,24 +113,24 @@ export default function UpscalePage() {
       <div className="content-wrapper max-w-5xl mx-auto">
         
         {/* Hero区 */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-500/20 rounded-2xl mb-4">
-            <Maximize2 className="w-8 h-8 text-primary-500" />
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary-500/20 rounded-2xl mb-6">
+            <Maximize2 className="w-10 h-10 text-primary-500" />
           </div>
           <h1 className="text-5xl font-bold text-dark-900 dark:text-dark-50 mb-4">
             {language === 'zh' ? 'AI图片放大工具' : 'AI Image Upscaler'}
           </h1>
-          <p className="text-xl text-dark-600 dark:text-dark-400 mb-8">
+          <p className="text-xl text-dark-600 dark:text-dark-400 mb-8 max-w-2xl mx-auto leading-relaxed">
             {language === 'zh' 
               ? '无损放大4倍，保持画质清晰' 
               : 'Upscale 4x without quality loss'}
           </p>
           
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <Sparkles className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-            <span className="text-sm text-yellow-800 dark:text-yellow-300">
+          <div className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg shadow-lg shadow-primary-500/30 border-2 border-primary-400">
+            <Sparkles className="w-5 h-5 text-white" />
+            <span className="text-sm font-semibold text-white">
               {language === 'zh' ? '消耗2张配额' : '2 quota per use'} · 
-              {language === 'zh' ? 'Basic用户专享' : 'Basic users only'}
+              {language === 'zh' ? '免费用户可用' : 'Available for free users'}
             </span>
           </div>
         </div>
@@ -157,14 +189,18 @@ export default function UpscalePage() {
                       <button
                         key={factor}
                         onClick={() => setScale(factor)}
-className={`p-4 rounded-lg border-2 transition-all ${
+                        className={`p-4 rounded-lg border-2 transition-all ${
                                           scale === factor
-                                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30 ring-2 ring-primary-200 dark:ring-primary-800'
-                                            : 'border-dark-200 dark:border-dark-700 hover:border-primary-300'
+                                            ? 'border-primary-500 bg-primary-500 text-white shadow-lg shadow-primary-500/30'
+                                            : 'border-dark-200 dark:border-dark-700 hover:border-primary-300 bg-white dark:bg-dark-900'
                                         }`}
                       >
-                        <p className="text-2xl font-bold text-dark-900 dark:text-dark-50">{factor}x</p>
-                        <p className="text-xs text-dark-500 mt-1">
+                        <p className={`text-2xl font-bold ${
+                          scale === factor ? 'text-white' : 'text-dark-900 dark:text-dark-50'
+                        }`}>{factor}x</p>
+                        <p className={`text-xs mt-1 ${
+                          scale === factor ? 'text-white/90' : 'text-dark-500 dark:text-dark-400'
+                        }`}>
                           {language === 'zh' ? '放大' : 'Upscale'}
                         </p>
                       </button>
@@ -178,16 +214,16 @@ className={`p-4 rounded-lg border-2 transition-all ${
                 <button
                   onClick={handleUpscale}
                   disabled={isProcessing}
-                  className="w-full btn-primary py-4 text-lg font-bold shadow-lg disabled:opacity-50"
+                  className="w-full btn-primary py-4 text-base font-semibold shadow-md hover:shadow-lg disabled:opacity-50 transition-all"
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-6 h-6 animate-spin" />
+                      <Loader2 className="w-5 h-5 animate-spin" />
                       {language === 'zh' ? '处理中...' : 'Processing...'}
                     </>
                   ) : (
                     <>
-                      <TrendingUp className="w-6 h-6" />
+                      <TrendingUp className="w-5 h-5" />
                       {language === 'zh' ? `放大${scale}倍（2张配额）` : `Upscale ${scale}x (2 quota)`}
                     </>
                   )}
@@ -211,22 +247,37 @@ className={`p-4 rounded-lg border-2 transition-all ${
                 <div className="space-y-4">
                   <img src={resultImage} alt="Upscaled" className="w-full rounded-lg border-2 border-primary-500" />
                   <button
-                    onClick={() => {
-                      const a = document.createElement('a');
-                      a.href = resultImage;
-                      a.download = `upscaled-${scale}x.png`;
-                      a.click();
+                    onClick={async () => {
+                      setIsDownloading(true);
+                      setError(null);
+                      try {
+                        await downloadImage(resultImage, `upscaled-${scale}x-${Date.now()}.png`);
+                      } catch (error) {
+                        setError(language === 'zh' ? '下载失败，请重试' : 'Download failed, please try again');
+                      } finally {
+                        setIsDownloading(false);
+                      }
                     }}
-                    className="w-full py-3 btn-primary"
+                    disabled={isDownloading}
+                    className="w-full py-3 btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    <Download className="w-5 h-5" />
-                    {language === 'zh' ? '下载高清图' : 'Download HD'}
+                    {isDownloading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        {language === 'zh' ? '下载中...' : 'Downloading...'}
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-5 h-5" />
+                        {language === 'zh' ? '下载高清图' : 'Download HD'}
+                      </>
+                    )}
                   </button>
                 </div>
               ) : (
-                <div className="text-center py-20 bg-dark-50 dark:bg-dark-800 rounded-lg">
-                  <Maximize2 className="w-16 h-16 mx-auto mb-4 text-dark-400" />
-                  <p className="text-dark-500">{language === 'zh' ? '放大后的图片将在这里显示' : 'Upscaled image will appear here'}</p>
+                <div className="text-center py-20 bg-dark-50 dark:bg-dark-800 rounded-xl border-2 border-dashed border-dark-300 dark:border-dark-700">
+                  <Maximize2 className="w-20 h-20 mx-auto mb-4 text-dark-400 dark:text-dark-500" />
+                  <p className="text-dark-500 dark:text-dark-400 font-medium">{language === 'zh' ? '放大后的图片将在这里显示' : 'Upscaled image will appear here'}</p>
                 </div>
               )}
             </div>
@@ -235,23 +286,23 @@ className={`p-4 rounded-lg border-2 transition-all ${
 
         {/* 引导升级 */}
         {!isLoggedIn && (
-          <div className="card p-8 bg-primary-50 dark:bg-primary-950/30 border-2 border-primary-200 dark:border-primary-800 text-center">
-            <h3 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-3">
-              {language === 'zh' ? '需要高质量放大？' : 'Need High-Quality Upscaling?'}
+          <div className="card p-8 bg-gradient-to-br from-primary-500 to-primary-600 text-white border-2 border-primary-400 shadow-lg shadow-primary-500/30 text-center">
+            <h3 className="text-2xl font-bold text-white mb-3">
+              {language === 'zh' ? '需要更多配额？' : 'Need More Quota?'}
             </h3>
-            <p className="text-dark-700 dark:text-dark-300 mb-6">
+            <p className="text-white/90 mb-6">
               {language === 'zh' 
-                ? '订阅Basic版本，200张配额每月，包含图片放大、去背景等8+工具！'
-                : 'Subscribe to Basic: 200 quota/month, includes upscaling, remove bg & 8+ tools!'}
+                ? '注册即送20张免费额度！升级Basic版本，200张配额每月，包含图片放大、去背景等8+工具！'
+                : 'Sign up for 20 free images! Upgrade to Basic: 200 quota/month, includes upscaling, remove bg & 8+ tools!'}
             </p>
             <div className="flex gap-4 justify-center">
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="px-6 py-3 btn-outline"
+                className="px-6 py-3 btn-primary"
               >
-                {language === 'zh' ? '免费试用' : 'Try Free'}
+                {language === 'zh' ? '免费注册（送20张）' : 'Sign Up Free (Get 20)'}
               </button>
-              <Link href="/pricing" className="px-6 py-3 btn-primary">
+              <Link href="/pricing" className="px-6 py-3 btn-outline">
                 {language === 'zh' ? '查看定价' : 'View Pricing'}
               </Link>
             </div>

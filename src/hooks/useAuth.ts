@@ -12,18 +12,95 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 获取当前登录用户
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-      setLoading(false);
-    });
-
-    // 监听认证状态变化
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('🔐 认证状态变化:', event, session?.user?.email);
-        setUser(session?.user ?? null);
+    // 初始化：先尝试从 localStorage 恢复 session
+    const initializeAuth = async () => {
+      try {
+        // 1. 首先获取已保存的 session（从 localStorage）
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          console.log('✅ 从 localStorage 恢复 session:', session.user.email);
+          setUser(session.user);
+          setLoading(false);
+        } else {
+          // 2. 如果没有 session，尝试 getUser（会触发自动恢复）
+          const { data: { user }, error } = await supabase.auth.getUser();
+          
+          if (user && !error) {
+            console.log('✅ 通过 getUser 恢复用户:', user.email);
+            setUser(user);
+          } else {
+            console.log('ℹ️ 未找到已保存的登录状态');
+            setUser(null);
+          }
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('❌ 初始化认证状态失败:', error);
+        setUser(null);
         setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // 监听认证状态变化（登录、登出、token刷新等）
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('🔐 认证状态变化:', event, session?.user?.email);
+        
+        // 处理各种认证事件
+        switch (event) {
+          case 'INITIAL_SESSION':
+            // 初始化时恢复 session（页面刷新时触发）
+            if (session?.user) {
+              console.log('✅ 初始化恢复 session:', session.user.email);
+              setUser(session.user);
+            } else {
+              setUser(null);
+            }
+            setLoading(false);
+            break;
+            
+          case 'SIGNED_IN':
+            // 用户登录
+            console.log('✅ 用户登录:', session?.user?.email);
+            setUser(session?.user ?? null);
+            setLoading(false);
+            break;
+            
+          case 'SIGNED_OUT':
+            // 用户登出
+            console.log('✅ 用户登出');
+            setUser(null);
+            setLoading(false);
+            break;
+            
+          case 'TOKEN_REFRESHED':
+            // Token 刷新（保持登录状态）
+            if (session?.user) {
+              console.log('✅ Token 已刷新:', session.user.email);
+              setUser(session.user);
+            }
+            setLoading(false);
+            break;
+            
+          case 'USER_UPDATED':
+            // 用户信息更新
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              console.log('✅ 用户信息已更新:', user.email);
+              setUser(user);
+            }
+            setLoading(false);
+            break;
+            
+          default:
+            // 其他事件（如 PASSWORD_RECOVERY）
+            setUser(session?.user ?? null);
+            setLoading(false);
+            break;
+        }
       }
     );
 

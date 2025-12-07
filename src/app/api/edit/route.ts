@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { editImage } from '@/lib/bananaApi';
 import { createClient } from '@supabase/supabase-js';
+import { calculateQuotaCost } from '@/lib/quotaMultiplier';
 
 // App Router配置
 export const runtime = 'nodejs';
@@ -9,7 +10,7 @@ export const maxDuration = 60;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tool, image, mask, instruction, bgColor, originalDimensions, apiKey, baseUrl, model, scale, quotaCost } = body;
+    const { tool, image, mask, instruction, bgColor, scale, style, originalDimensions, apiKey, baseUrl, model } = body;
 
     // ✅ 1. 验证用户登录（从请求头获取token）
     const authHeader = request.headers.get('authorization');
@@ -69,18 +70,36 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ 用户可以编辑图片:', user.email, 'is_disabled =', profile?.is_disabled);
 
-    // ✅ 3. 扣减配额（根据工具类型消耗不同配额）
-    // upscale工具消耗2张，其他工具消耗1张
-    const quotaAmount = tool === 'upscale' ? (quotaCost || 2) : 1;
-    
+    // ✅ 3. 计算配额消耗（工具基础消耗 × 模型倍数）
+    const baseQuotaCost = ['upscale', 'style_transfer', 'enhance', 'colorize'].includes(tool) ? 2 : 1; // 这些工具消耗2张，其他工具消耗1张
+    const modelMultiplier = calculateQuotaCost(1, model); // 获取模型倍数
+    const quotaCost = baseQuotaCost * modelMultiplier; // 总配额消耗 = 基础消耗 × 模型倍数
+
+    // ✅ 4. 检查配额
+    const { data: quotaData, error: quotaError } = await supabase.rpc('check_user_quota', {
+      p_user_id: user.id
+    });
+
+    if (quotaError || !quotaData || quotaData.remaining < quotaCost) {
+      return NextResponse.json({
+        error: 'QUOTA_EXHAUSTED',
+        message: `配额不足，需要 ${quotaCost} 张，当前剩余 ${quotaData?.remaining || 0} 张`,
+        remaining: quotaData?.remaining || 0
+      }, { status: 403 });
+    }
+
+    // ✅ 5. 扣减配额
     const { data: deductData, error: deductError } = await supabase.rpc('deduct_user_quota', {
       p_user_id: user.id,
-      p_amount: quotaAmount,
-      p_action_type: tool === 'upscale' ? 'upscale_image' : 'edit_image',
+      p_amount: quotaCost,
+      p_action_type: 'edit_image',
       p_metadata: {
         tool,
-        scale: scale || null,
-        model: model || 'gemini-2.5-flash-image'
+        scale: tool === 'upscale' ? scale : undefined,
+        model: model || 'gemini-2.5-flash-image',
+        base_quota: baseQuotaCost,
+        model_multiplier: modelMultiplier,
+        quota_multiplier: quotaCost
       }
     });
 
@@ -95,9 +114,9 @@ export async function POST(request: NextRequest) {
     console.log(`✅ 配额已扣减: 剩余=${deductData.remaining}`);
 
     // 验证必需参数
-    if (!tool || !['inpaint', 'remove_bg', 'id_photo', 'upscale'].includes(tool)) {
+    if (!tool || !['inpaint', 'remove_bg', 'id_photo', 'upscale', 'style_transfer', 'enhance', 'colorize'].includes(tool)) {
       return NextResponse.json(
-        { error: '请提供有效的编辑工具类型 (inpaint, remove_bg, id_photo 或 upscale)' },
+        { error: '请提供有效的编辑工具类型 (inpaint, remove_bg, id_photo, upscale, style_transfer, enhance, colorize)' },
         { status: 400 }
       );
     }
@@ -117,7 +136,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('收到图片编辑请求:', { tool, imageLength: image.length, instruction, bgColor });
+    console.log('收到图片编辑请求:', { tool, imageLength: image.length, instruction, bgColor, scale });
 
     // 调用Nano Banana API，传递配置
     const result = await editImage({
@@ -126,7 +145,8 @@ export async function POST(request: NextRequest) {
       mask,
       instruction,
       bgColor,
-      scale,
+      scale: tool === 'upscale' ? scale : undefined,
+      style: tool === 'style_transfer' ? style : undefined,
       originalDimensions
     }, {
       apiKey,

@@ -29,18 +29,18 @@ const MODEL_PROVIDERS: ModelProvider[] = [
       },
       {
         id: 'gemini-3-pro-image-preview',
-        name: 'Gemini 3 Pro Image',
-        description: '最新Gemini 3 Pro图像生成'
+        name: 'Gemini 3 Pro Image Preview',
+        description: 'Gemini 3 Pro 预览版，标准质量'
       },
       {
         id: 'gemini-3-pro-image-preview-2k',
-        name: 'Gemini 3 Pro Image 2K',
-        description: '高分辨率2K输出'
+        name: 'Gemini 3 Pro Image Preview 2K',
+        description: 'Gemini 3 Pro 预览版，2K高分辨率'
       },
       {
         id: 'gemini-3-pro-image-preview-4k',
-        name: 'Gemini 3 Pro Image 4K',
-        description: '超高分辨率4K输出'
+        name: 'Gemini 3 Pro Image Preview 4K',
+        description: 'Gemini 3 Pro 预览版，4K超清分辨率'
       }
     ]
   },

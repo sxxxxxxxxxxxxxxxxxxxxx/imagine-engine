@@ -69,8 +69,8 @@ export default function WelcomeModal() {
           
           <p className="text-xl font-semibold text-primary-600 dark:text-primary-400 mb-2">
             {language === 'zh' 
-              ? '注册即送 10 张免费 AI 图片' 
-              : 'Get 10 Free AI Images on Sign Up'}
+              ? '注册即送 20 张免费 AI 图片' 
+              : 'Get 20 Free AI Images on Sign Up'}
           </p>
           <p className="text-sm text-dark-500 mb-1">
             {language === 'zh' 

@@ -73,7 +73,7 @@ interface AppState {
 
 // 默认配额
 const DEFAULT_QUOTA: UsageQuota = {
-  generate: { used: 0, limit: 10 }, // 免费版每天 10 次
+  generate: { used: 0, limit: 20 }, // 免费版每月 20 次
   edit: { used: 0, limit: 5 },     // 免费版每天 5 次
   resetAt: Date.now() + 24 * 60 * 60 * 1000 // 24小时后重置
 };

@@ -34,12 +34,13 @@ export interface GenerateImageRequest {
 }
 
 export interface EditImageRequest {
-  tool: 'inpaint' | 'remove_bg' | 'id_photo' | 'upscale';
+  tool: 'inpaint' | 'remove_bg' | 'id_photo' | 'upscale' | 'style_transfer' | 'enhance' | 'colorize';
   image: string; // Base64 encoded
   mask?: string; // Base64 encoded, optional for inpaint
   instruction?: string; // For inpaint tool
   bgColor?: 'red' | 'blue' | 'white'; // For id_photo tool
   scale?: number; // For upscale tool (2, 3, or 4)
+  style?: string; // For style_transfer tool (artistic style name)
   originalDimensions?: { width: number; height: number };
 }
 
@@ -210,7 +211,17 @@ High quality, detailed, professional.`;
       hasText: messageContent.some(m => m.type === 'text')
     });
 
-    const response = await fetch(settings.baseUrl || 'https://newapi.aicohere.org/v1/chat/completions', {
+    // 确保 baseUrl 包含完整的路径
+    let apiUrl = settings.baseUrl || 'https://newapi.aicohere.org/v1/chat/completions';
+    // 如果 baseUrl 不包含 /chat/completions，则自动添加
+    if (apiUrl && !apiUrl.includes('/chat/completions')) {
+      // 移除末尾的斜杠（如果有）
+      apiUrl = apiUrl.replace(/\/$/, '');
+      // 添加 /chat/completions 路径
+      apiUrl = `${apiUrl}/chat/completions`;
+    }
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${settings.apiKey}`,
@@ -342,18 +353,21 @@ export async function editImage(
     };
 
     const editPrompts = {
-      remove_bg: `Remove the background from this image while keeping the main subject intact.
+      remove_bg: `You are a professional image editing AI. Your task is to remove the background from this image while preserving the main subject with pixel-perfect accuracy.
 
-【绝对规则 - 必须严格遵守】
-1. 只移除背景，保持主体完全不变
-2. 保持原图的所有细节：构图、角度、透视、光线、阴影、纹理
-3. 保持主体的所有元素：表情、姿势、服装、配饰等
-4. 保持原图的色彩风格、色调、饱和度、对比度
-5. 不得添加任何新元素、物体或装饰
-6. 不得删除主体的任何部分
-7. 确保背景完全透明或纯色
+【CRITICAL RULES - MUST FOLLOW STRICTLY】
+1. Remove ONLY the background - keep the main subject 100% unchanged
+2. Preserve ALL details: composition, angles, perspective, lighting, shadows, textures, fine edges
+3. Maintain ALL subject elements: facial expressions, poses, clothing, accessories, hair strands
+4. Keep original color style: hue, saturation, brightness, contrast - exactly as original
+5. DO NOT add any new elements, objects, or decorations
+6. DO NOT remove any part of the main subject
+7. Ensure background is completely transparent (alpha channel = 0)
+8. Handle complex edges carefully: hair, fur, transparent objects, fine details
+9. Maintain original image resolution and quality
+10. Output format: PNG with transparent background
 
-Return the edited image with transparent background.`,
+Return the edited image with perfect transparent background, maintaining all original subject details.`,
 
       inpaint: `${request.instruction ? `Edit this image: ${request.instruction}` : 'Edit this image to remove unwanted elements while maintaining the original style and composition.'}
 
@@ -368,36 +382,106 @@ Return the edited image with transparent background.`,
 
 Return the edited image maintaining original quality and dimensions.`,
 
-      id_photo: `Replace the background of this portrait photo with a solid ${request.bgColor || 'red'} color (${bgColors[request.bgColor as keyof typeof bgColors] || '#FF0000'}).
+      id_photo: `You are a professional ID photo editor. Replace the background of this portrait with a solid ${request.bgColor || 'red'} color (${bgColors[request.bgColor as keyof typeof bgColors] || '#FF0000'}) while maintaining professional photo standards.
 
-【证件照处理规则】
-1. 保持人物主体完全不变
-2. 移除原始背景，替换为纯色背景
-3. 确保边缘干净、自然
-4. 保持原始图片的分辨率和质量
-5. 背景颜色必须均匀一致
-6. 不得修改人物的任何特征
+【ID PHOTO PROCESSING RULES - STRICT】
+1. Keep the person's subject 100% unchanged - no modifications to face, body, clothing, or appearance
+2. Remove original background completely and replace with uniform solid color
+3. Ensure clean, natural edges with proper anti-aliasing
+4. Maintain original image resolution and quality (no compression artifacts)
+5. Background color must be perfectly uniform and consistent (no gradients, patterns, or variations)
+6. DO NOT modify any facial features, expressions, or body characteristics
+7. Center the subject properly in the frame
+8. Ensure professional lighting and color balance
+9. Follow standard ID photo specifications (proper framing, no shadows on background)
+10. Output format: High-quality image with solid color background
 
-Return a professional ID photo with solid color background.`,
+Return a professional, standard-compliant ID photo with perfect solid color background.`,
 
-      upscale: `Upscale this image by ${request.scale || 2}x while maintaining maximum quality and detail.
+      upscale: `You are an AI image upscaling expert. Upscale this image by exactly ${request.scale || 2}x using advanced super-resolution technology while maintaining perfect quality and authenticity.
 
-【图片放大规则】
-1. 将图片放大${request.scale || 2}倍
-2. 使用AI超分辨率技术增强细节
-3. 保持原图的色彩、风格和内容完全不变
-4. 增强边缘清晰度，减少模糊
-5. 保持自然的纹理和细节
-6. 不得添加任何新元素或修改内容
+【IMAGE UPSCALING RULES - CRITICAL】
+1. Upscale to exactly ${request.scale || 2}x resolution (width × ${request.scale || 2}, height × ${request.scale || 2})
+2. Use AI super-resolution algorithms to enhance details and sharpness intelligently
+3. Preserve ALL original details: composition, angles, perspective, lighting, shadows, textures, fine patterns
+4. Maintain ALL original elements: facial expressions, poses, clothing, accessories, background objects, text
+5. Keep original color style: hue, saturation, brightness, contrast - exactly as original
+6. DO NOT add any new elements, objects, decorations, or artifacts
+7. DO NOT remove or modify any existing elements
+8. Ensure upscaled image is sharp, clear, and free from blur, artifacts, or distortion
+9. Use advanced AI algorithms to intelligently enhance details (not invent new ones)
+10. Make the upscaled image look like native high-resolution, not artificially enhanced
+11. Maintain natural appearance - avoid over-sharpening or artificial-looking enhancements
+12. Preserve original image quality and characteristics
 
-Return the upscaled high-resolution image.`,
+Return the upscaled image with ${request.scale || 2}x resolution, maintaining perfect quality and authenticity.`,
+
+      style_transfer: `You are an AI artistic style transfer expert. Apply the artistic style "${request.style || 'impressionist'}" to this image while preserving the original content and composition.
+
+【ARTISTIC STYLE TRANSFER RULES - CRITICAL】
+1. Apply the specified artistic style (${request.style || 'impressionist'}) to the entire image
+2. Preserve the original content: subjects, objects, composition, layout - all must remain recognizable
+3. Transform visual style: colors, brush strokes, textures, lighting effects according to the artistic style
+4. Maintain original image structure: proportions, perspective, spatial relationships
+5. Apply style consistently across the entire image
+6. Enhance artistic elements: brushwork, color palette, texture patterns characteristic of the style
+7. DO NOT change the subject matter or add/remove objects
+8. DO NOT distort proportions or perspective
+9. Ensure the result looks like a professional artistic interpretation, not a filter
+10. Maintain high image quality and resolution
+
+Return the stylized image with the artistic style applied while preserving all original content.`,
+
+      enhance: `You are an AI image enhancement expert. Enhance the quality, sharpness, colors, and overall visual appeal of this image using advanced image processing techniques.
+
+【IMAGE ENHANCEMENT RULES - CRITICAL】
+1. Enhance image sharpness and clarity intelligently (reduce blur, improve edge definition)
+2. Optimize color balance: improve saturation, contrast, brightness for natural and vibrant colors
+3. Reduce noise and artifacts while preserving important details
+4. Enhance details in shadows and highlights (improve dynamic range)
+5. Maintain original composition, perspective, and all image elements
+6. Preserve natural appearance - avoid over-processing or artificial-looking results
+7. DO NOT add new elements, objects, or modify the subject matter
+8. DO NOT change the overall color tone dramatically (maintain original mood)
+9. Apply subtle, professional-grade enhancements
+10. Maintain original image resolution and aspect ratio
+11. Ensure the enhanced image looks natural and professional, not over-processed
+
+Return the enhanced image with improved quality, sharpness, and colors while maintaining natural appearance.`,
+
+      colorize: `You are an AI colorization expert. Add realistic, historically accurate colors to this black and white or grayscale photograph.
+
+【IMAGE COLORIZATION RULES - CRITICAL】
+1. Add realistic, natural colors to the black and white image
+2. Use historically and contextually appropriate colors (e.g., skin tones, clothing colors, environment colors)
+3. Maintain realistic color relationships: shadows, highlights, mid-tones should have appropriate color variations
+4. Preserve all original details: composition, lighting, textures, fine details
+5. Apply colors consistently: similar objects should have similar colors
+6. Use natural color palettes: avoid overly saturated or unrealistic colors
+7. Maintain original image structure: do not modify composition, perspective, or subject matter
+8. Enhance realism: colors should look natural and believable
+9. Preserve original contrast and tonal relationships
+10. DO NOT add new elements or modify the subject matter
+11. Ensure the colorized image looks like an authentic color photograph, not artificially colored
+
+Return the colorized image with realistic, natural colors while preserving all original details and structure.`,
     };
 
-    const editPrompt = editPrompts[request.tool as keyof typeof editPrompts];
+    const editPrompt = editPrompts[request.tool];
 
-    console.log('发送图片编辑请求:', { tool: request.tool, model: settings.model, baseUrl: settings.baseUrl });
+    // 确保 baseUrl 包含完整的路径
+    let apiUrl = settings.baseUrl || 'https://newapi.aicohere.org/v1/chat/completions';
+    // 如果 baseUrl 不包含 /chat/completions，则自动添加
+    if (apiUrl && !apiUrl.includes('/chat/completions')) {
+      // 移除末尾的斜杠（如果有）
+      apiUrl = apiUrl.replace(/\/$/, '');
+      // 添加 /chat/completions 路径
+      apiUrl = `${apiUrl}/chat/completions`;
+    }
 
-    const response = await fetch(settings.baseUrl || 'https://newapi.aicohere.org/v1/chat/completions', {
+    console.log('发送图片编辑请求:', { tool: request.tool, model: settings.model, baseUrl: apiUrl });
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${settings.apiKey}`,
@@ -506,8 +590,18 @@ export async function checkApiKeyStatus(): Promise<{ valid: boolean; error?: str
       return { valid: false, error: 'API密钥未配置，请在设置中配置' };
     }
 
+    // 确保 baseUrl 包含完整的路径
+    let apiUrl = settings.baseUrl || 'https://newapi.aicohere.org/v1/chat/completions';
+    // 如果 baseUrl 不包含 /chat/completions，则自动添加
+    if (apiUrl && !apiUrl.includes('/chat/completions')) {
+      // 移除末尾的斜杠（如果有）
+      apiUrl = apiUrl.replace(/\/$/, '');
+      // 添加 /chat/completions 路径
+      apiUrl = `${apiUrl}/chat/completions`;
+    }
+
     // 使用一个简单的测试请求来验证API密钥
-    const response = await fetch(settings.baseUrl, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${settings.apiKey}`,

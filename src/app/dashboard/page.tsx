@@ -21,6 +21,9 @@ interface SubscriptionInfo {
   startDate?: string;
   endDate?: string;
   nextBillingDate?: string;
+  quota_total?: number;
+  quota_used?: number;
+  quota_remaining?: number;
 }
 
 interface UserProfile {
@@ -89,7 +92,7 @@ export default function DashboardPage() {
       // 3. 获取订阅信息（修正字段名：start_date, end_date, status）
       const { data: subscriptionData } = await supabase
         .from('subscriptions')
-        .select('plan_type, start_date, end_date, quota_remaining, quota_total')
+        .select('plan_type, start_date, end_date, quota_remaining, quota_total, quota_used')
         .eq('user_id', user?.id)
         .eq('status', 'active')
         .order('end_date', { ascending: false })
@@ -100,7 +103,10 @@ export default function DashboardPage() {
         setSubscription({
           planType: subscriptionData.plan_type || 'free',
           startDate: subscriptionData.start_date,
-          endDate: subscriptionData.end_date
+          endDate: subscriptionData.end_date,
+          quota_total: subscriptionData.quota_total,
+          quota_used: subscriptionData.quota_used,
+          quota_remaining: subscriptionData.quota_remaining
         });
       }
 

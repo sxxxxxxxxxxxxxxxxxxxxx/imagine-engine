@@ -53,8 +53,8 @@ export default function AuthModal({
       // 注册成功提示
       if (mode === 'signup') {
         setSuccess(language === 'zh' 
-          ? '🎉 注册成功！\n📧 验证邮件已发送到 ' + email + '\n请查收邮件并点击验证链接，验证后即可获得10张免费配额' 
-          : '🎉 Sign up successful!\n📧 Verification email sent to ' + email + '\nPlease check your email and click the link to get 10 free images');
+          ? '🎉 注册成功！\n📧 验证邮件已发送到 ' + email + '\n请查收邮件并点击验证链接，验证后即可获得20张免费配额' 
+          : '🎉 Sign up successful!\n📧 Verification email sent to ' + email + '\nPlease check your email and click the link to get 20 free images');
       } else {
         setSuccess(language === 'zh' ? '✅ 登录成功！' : '✅ Login successful!');
       }
@@ -120,7 +120,7 @@ export default function AuthModal({
           </h2>
           <p className="text-dark-600 dark:text-dark-400">
             {mode === 'signup' 
-              ? (language === 'zh' ? '🎁 注册即送 10 张免费图片' : '🎁 Get 10 free images upon signup')
+              ? (language === 'zh' ? '🎁 注册即送 20 张免费图片' : '🎁 Get 20 free images upon signup')
               : (language === 'zh' ? '登录继续您的创作' : 'Login to continue creating')}
           </p>
         </div>
@@ -144,8 +144,8 @@ export default function AuthModal({
           <div className="mb-4 p-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg">
             <p className="text-sm text-primary-700 dark:text-primary-300">
               📧 {language === 'zh' 
-                ? '注册后请查收验证邮件，验证后即可获得10张免费配额' 
-                : 'Please verify your email to get 10 free images'}
+                ? '注册后请查收验证邮件，验证后即可获得20张免费配额' 
+                : 'Please verify your email to get 20 free images'}
             </p>
           </div>
         )}

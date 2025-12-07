@@ -32,7 +32,7 @@ export default function OnboardingTour() {
           <div className="text-center mb-4">
             <Sparkles className="w-16 h-16 text-primary-500 mx-auto mb-3" />
             <p className="text-lg font-semibold text-dark-900 dark:text-dark-50">
-              注册即送 <span className="text-primary-600">10 张免费图片</span>
+              注册即送 <span className="text-primary-600">20 张免费图片</span>
             </p>
           </div>
           <div className="space-y-2 text-dark-600 dark:text-dark-400">
@@ -121,7 +121,7 @@ export default function OnboardingTour() {
           <div className="text-center mb-4">
             <Sparkles className="w-16 h-16 text-primary-500 mx-auto mb-3" />
             <p className="text-lg font-semibold text-dark-900 dark:text-dark-50">
-              Get <span className="text-primary-600">10 Free Images</span> on Sign Up
+              Get <span className="text-primary-600">20 Free Images</span> on Sign Up
             </p>
           </div>
           <div className="space-y-2 text-dark-600 dark:text-dark-400">

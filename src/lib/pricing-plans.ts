@@ -51,9 +51,10 @@ export const PRICING_PLANS: PricingPlan[] = [
     features: [
       '200张月度额度',
       '全部AI模型（含高清）',
-      '全部工具（8+）',
+      '全部工具（9+）',
       '证件照生成',
       '智能去背景',
+      '科研绘图助手',
       '优先邮件支持',
       '30天历史记录',
       '批量下载'
@@ -107,16 +108,17 @@ export const PRICING_PLANS: PricingPlan[] = [
   }
 ];
 
-// 工具功能和定价关系
+// 工具功能和定价关系 - 所有工具免费用户都可以使用
 export const TOOL_PRICING = {
   'remove-bg': { minPlan: 'free', quota: 1 },        // 去背景：Free可用
-  'id-photo': { minPlan: 'free', quota: 1 },
-  'upscale': { minPlan: 'basic', quota: 2 },         // 放大：Basic及以上，消耗2张
-  'style-transfer': { minPlan: 'basic', quota: 2 },  // 风格转换：Basic及以上
-  'sketch-to-image': { minPlan: 'basic', quota: 1 }, // 素描转照片：Basic及以上
-  'compress': { minPlan: 'free', quota: 0 },         // 压缩：Free可用，不消耗配额
-  'enhance': { minPlan: 'basic', quota: 2 },         // 增强：Basic及以上
-  'colorize': { minPlan: 'basic', quota: 2 }         // 上色：Basic及以上
+  'id-photo': { minPlan: 'free', quota: 1 },          // 证件照：Free可用
+  'upscale': { minPlan: 'free', quota: 2 },           // 放大：Free可用，消耗2张
+  'style-transfer': { minPlan: 'free', quota: 2 },     // 风格转换：Free可用
+  'sketch-to-image': { minPlan: 'free', quota: 1 },   // 素描转照片：Free可用
+  'compress': { minPlan: 'free', quota: 0 },          // 压缩：Free可用，不消耗配额
+  'enhance': { minPlan: 'free', quota: 2 },            // 增强：Free可用
+  'colorize': { minPlan: 'free', quota: 2 },           // 上色：Free可用
+  'scientific-drawing': { minPlan: 'free', quota: 3 } // 科研绘图：Free可用，消耗3张
 };
 
 // 获取用户可用工具
