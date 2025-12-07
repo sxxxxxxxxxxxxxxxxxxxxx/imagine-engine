@@ -1,8 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import SpotlightCard from '@/components/SpotlightCard';
+import GridBackground from '@/components/GridBackground';
+import TestimonialCarousel from '@/components/TestimonialCarousel';
+import { gsap } from 'gsap';
 import { 
   Sparkles, 
   Wand2, 
@@ -23,20 +27,181 @@ export default function HomePage() {
   const [isPaused, setIsPaused] = useState(false);
   const [activeLayer, setActiveLayer] = useState<number>(2); // 0=背景1, 1=背景2, 2=前景
   const [emailCopied, setEmailCopied] = useState(false);
+  const [isEmailHovered, setIsEmailHovered] = useState(false);
+  
+  // GSAP 动画引用
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
+  const descriptionRef = useRef<HTMLParagraphElement>(null);
+  const badgeRef = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // GSAP 动画初始化
+  useEffect(() => {
+    if (!mounted) return;
+
+    const ctx = gsap.context(() => {
+      // 创建时间线
+      const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+      // 标签动画
+      if (badgeRef.current) {
+        gsap.set(badgeRef.current, { opacity: 0, y: -20 });
+        tl.to(badgeRef.current, {
+          opacity: 1,
+          y: 0,
+          duration: 0.6
+        });
+      }
+
+      // 标题动画 - 分块显示效果（按行和关键词）
+      if (titleRef.current) {
+        const titleText = titleRef.current;
+        const originalHTML = titleText.innerHTML;
+        
+        // 将标题内容按行和关键词分割
+        const lines = originalHTML.split('<br />').map(line => line.trim()).filter(line => line);
+        
+        if (lines.length > 0) {
+          // 为每行创建包装并分割成词
+          const processedLines: string[] = [];
+          
+          lines.forEach((line, lineIndex) => {
+            // 提取文本内容（保留 HTML 标签）
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = line;
+            const textNodes: string[] = [];
+            
+            const extractText = (node: Node) => {
+              if (node.nodeType === Node.TEXT_NODE) {
+                const text = node.textContent || '';
+                // 按空格和中文分词
+                const words = text.split(/(\s+)/).filter(w => w);
+                words.forEach(word => {
+                  if (word.trim()) {
+                    textNodes.push(word.trim());
+                  }
+                });
+              } else if (node.nodeType === Node.ELEMENT_NODE) {
+                const el = node as HTMLElement;
+                if (el.tagName === 'SPAN' && el.classList.contains('text-primary-500')) {
+                  // 保留带样式的 span
+                  textNodes.push(el.outerHTML);
+                } else {
+                  Array.from(node.childNodes).forEach(extractText);
+                }
+              }
+            };
+            
+            Array.from(tempDiv.childNodes).forEach(extractText);
+            
+            const lineHTML = textNodes.map((word, wordIndex) => {
+              if (word.startsWith('<span')) {
+                // 已经是 HTML，包装它
+                return `<span class="hero-word inline-block" style="opacity: 0; transform: translateY(40px) rotateX(-20deg);">${word}</span>`;
+              }
+              return `<span class="hero-word inline-block" style="opacity: 0; transform: translateY(40px) rotateX(-20deg);">${word}</span>`;
+            }).join(' ');
+            
+            processedLines.push(lineHTML);
+          });
+          
+          // 重新构建 HTML
+          titleText.innerHTML = processedLines.map((line, i) => 
+            i > 0 ? `<br />${line}` : line
+          ).join('');
+          
+          // 动画所有词
+          const wordSpans = titleText.querySelectorAll('.hero-word');
+          if (wordSpans.length > 0) {
+            tl.to(wordSpans, {
+              opacity: 1,
+              y: 0,
+              rotationX: 0,
+              duration: 0.6,
+              stagger: {
+                amount: 1.2,
+                from: 'start'
+              },
+              ease: 'power2.out'
+            }, '-=0.2');
+          } else {
+            // 回退：直接动画整个标题
+            gsap.set(titleText, { opacity: 0, y: 50, scale: 0.95 });
+            tl.to(titleText, {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 1,
+              ease: 'power3.out'
+            }, '-=0.2');
+          }
+        } else {
+          // 简单回退：直接动画整个标题
+          gsap.set(titleText, { opacity: 0, y: 50, scale: 0.95 });
+          tl.to(titleText, {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 1,
+            ease: 'power3.out'
+          }, '-=0.2');
+        }
+      }
+
+      // 副标题动画 - 淡入 + 向上滑动
+      if (subtitleRef.current) {
+        gsap.set(subtitleRef.current, { opacity: 0, y: 30 });
+        tl.to(subtitleRef.current, {
+          opacity: 1,
+          y: 0,
+          duration: 0.9,
+          ease: 'power2.out'
+        }, '-=0.5');
+      }
+
+      // 描述文字动画 - 淡入 + 向上滑动
+      if (descriptionRef.current) {
+        gsap.set(descriptionRef.current, { opacity: 0, y: 30 });
+        tl.to(descriptionRef.current, {
+          opacity: 1,
+          y: 0,
+          duration: 0.9,
+          ease: 'power2.out'
+        }, '-=0.7');
+      }
+
+      // CTA 按钮动画 - 弹性效果
+      if (ctaRef.current) {
+        const buttons = Array.from(ctaRef.current.children) as HTMLElement[];
+        gsap.set(buttons, { opacity: 0, y: 30, scale: 0.9 });
+        tl.to(buttons, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.7,
+          stagger: 0.15,
+          ease: 'back.out(1.4)'
+        }, '-=0.5');
+      }
+    });
+
+    return () => ctx.revert();
+  }, [mounted, language]);
+
   // 复制邮箱到剪贴板
   const copyEmail = async () => {
     try {
-      await navigator.clipboard.writeText('send@2art.fun');
+      await navigator.clipboard.writeText('feedback@2art.fun');
       setEmailCopied(true);
       setTimeout(() => setEmailCopied(false), 2000);
     } catch (err) {
       // 如果复制失败，打开mailto
-      window.location.href = 'mailto:send@2art.fun';
+      window.location.href = 'mailto:feedback@2art.fun';
     }
   };
 
@@ -127,7 +292,9 @@ export default function HomePage() {
         resources: '资源',
         company: '公司',
         contact: '联系我们',
-        email: 'send@2art.fun',
+        email: 'feedback@2art.fun',
+        emailHint: '专门用于收集反馈意见',
+        emailCopyHint: '点击复制邮箱',
         copyright: '专业 AI 创作平台'
       }
     },
@@ -153,6 +320,7 @@ export default function HomePage() {
       ],
       pricing: {
         title: 'Simple, Transparent Pricing',
+        subtitle: 'Start free, upgrade as needed',
         free: {
           name: 'Free',
           price: '$0',
@@ -179,6 +347,9 @@ export default function HomePage() {
         product: 'Product',
         resources: 'Resources',
         company: 'Company',
+        email: 'feedback@2art.fun',
+        emailHint: 'For feedback and suggestions',
+        emailCopyHint: 'Click to copy email',
         copyright: 'Professional AI Creation Platform'
       }
     }
@@ -251,19 +422,25 @@ export default function HomePage() {
     <div className="page-container">
       {/* Hero Section - 简洁专业版 */}
       <section className="content-wrapper py-24 md:py-32 relative overflow-hidden">
+        {/* 网格背景 */}
+        <GridBackground opacity={0.06} gridSize={50} />
+        
         <div className="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto relative z-10">
           {/* 左侧：文字内容 */}
           <div>
             {/* 标签 - 微妙设计 */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100/30 dark:bg-primary-900/20 border border-primary-200/50 dark:border-primary-800/50 mb-8">
-            <div className="w-1.5 h-1.5 bg-primary-500 rounded-full" />
-            <span className="text-xs font-medium text-dark-600 dark:text-dark-400 uppercase tracking-wide">
+            <div ref={badgeRef} className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary-100/30 dark:bg-primary-900/20 border border-primary-200/50 dark:border-primary-800/50 mb-8 backdrop-blur-sm">
+            <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse-slow" />
+            <span className="text-sm font-semibold text-dark-700 dark:text-dark-300 uppercase tracking-wider">
               {language === 'zh' ? '专业 AI 图像创作平台' : 'Professional AI Image Creation Platform'}
             </span>
           </div>
 
-          {/* 主标题 - 超大气 */}
-          <h1 className="text-6xl md:text-8xl font-bold text-dark-900 dark:text-dark-50 mb-8 leading-tight tracking-tight">
+          {/* 主标题 - 超大气，GSAP 动画 */}
+          <h1 
+            ref={titleRef}
+            className="text-6xl md:text-8xl font-bold text-dark-900 dark:text-dark-50 mb-8 leading-tight tracking-tighter"
+          >
             {language === 'zh' ? (
               <>
                 AI 图像创作
@@ -279,26 +456,43 @@ export default function HomePage() {
             )}
           </h1>
 
-          {/* 副标题 - 更大更清晰 */}
-          <p className="text-2xl md:text-3xl text-dark-600 dark:text-dark-400 mb-6 max-w-3xl leading-relaxed font-medium">
+          {/* 副标题 - 更大更清晰，GSAP 动画 */}
+          <p 
+            ref={subtitleRef}
+            className="text-2xl md:text-3xl text-dark-600 dark:text-dark-400 mb-6 max-w-3xl leading-relaxed font-medium tracking-tight"
+          >
             {language === 'zh' 
               ? '多图融合、精确比例控制、AI 智能助手'
               : 'Multi-Image Fusion, Precise Ratio Control, AI Assistant'}
           </p>
-          <p className="text-xl text-dark-500 dark:text-dark-500 mb-14 max-w-3xl">
+          
+          {/* 描述文字 - GSAP 动画 */}
+          <p 
+            ref={descriptionRef}
+            className="text-xl text-dark-500 dark:text-dark-500 mb-14 max-w-3xl tracking-normal"
+          >
             {language === 'zh' 
               ? '注册即送 20 张免费图片 · 无需信用卡'
               : 'Get 20 Free Images on Sign Up · No Credit Card Required'}
           </p>
 
-          {/* CTA - 更大更突出 */}
-          <div className="flex flex-col sm:flex-row items-center gap-5">
-            <Link href="/create" className="btn-primary px-12 py-5 text-xl font-semibold shadow-lg hover:shadow-xl">
+          {/* CTA - 更大更突出，GSAP 动画 */}
+          <div ref={ctaRef} className="flex flex-col sm:flex-row items-center gap-5">
+            <Link href="/create" className="btn-primary px-12 py-5 text-xl font-semibold shadow-lg hover:shadow-xl hover:shadow-primary-500/30 transition-all duration-300 group relative overflow-hidden">
+              <span className="relative z-10 flex items-center tracking-tight">
               {language === 'zh' ? '免费开始创作' : 'Start Creating Free'}
-              <ArrowRight className="w-6 h-6 ml-3" />
+                <ArrowRight className="w-6 h-6 ml-3 transition-transform group-hover:translate-x-1" />
+              </span>
+              {/* 按钮光晕 */}
+              <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl -z-10" />
             </Link>
-            <Link href="/showcase" className="btn-outline px-12 py-5 text-xl font-semibold">
+            <Link href="/showcase" className="btn-outline px-12 py-5 text-xl font-semibold tracking-tight hover:border-primary-400 dark:hover:border-primary-600 transition-all duration-300 group relative overflow-hidden hover:shadow-lg hover:shadow-primary-500/20 hover:-translate-y-0.5">
+              <span className="relative z-10 flex items-center">
               {language === 'zh' ? '查看案例' : 'View Showcase'}
+                <ArrowRight className="w-6 h-6 ml-3 transition-transform group-hover:translate-x-1" />
+              </span>
+              {/* 微妙光晕效果 */}
+              <div className="absolute inset-0 bg-primary-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </Link>
           </div>
 
@@ -329,10 +523,18 @@ export default function HomePage() {
             <div className="relative h-[600px] w-full overflow-hidden pl-8">{/* 添加左侧padding增加安全距离 */}
               {/* 装饰光晕 - 动态变化 */}
               <div 
-                className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[120px] transition-opacity duration-[5000ms]"
+                className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[120px] transition-opacity duration-[5000ms] pointer-events-none"
                 style={{
-                  background: 'radial-gradient(circle, rgba(45, 212, 191, 0.15) 0%, transparent 70%)',
+                  background: 'radial-gradient(circle, rgba(20, 184, 166, 0.12) 0%, transparent 70%)',
                   opacity: 0.3 + Math.sin(currentImageIndex * 0.5) * 0.1,
+                }}
+              />
+              {/* 额外的微妙光晕层 */}
+              <div 
+                className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-[100px] transition-opacity duration-[7000ms] pointer-events-none"
+                style={{
+                  background: 'radial-gradient(circle, rgba(20, 184, 166, 0.08) 0%, transparent 70%)',
+                  opacity: 0.2 + Math.cos(currentImageIndex * 0.3) * 0.1,
                 }}
               />
 
@@ -491,40 +693,45 @@ export default function HomePage() {
       </section>
 
       {/* Features Grid */}
-      <section className="content-wrapper py-16">
+      <section className="content-wrapper py-16 relative">
         <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
           {features.map((feature) => {
             const Icon = feature.icon;
             return (
-              <Link
+              <SpotlightCard
                 key={feature.href}
+                className="rounded-xl border border-dark-200 dark:border-dark-800 bg-white dark:bg-dark-900 shadow-sm hover:shadow-md transition-all duration-300"
+              >
+                <Link
                 href={feature.href}
-                className="card-hover p-6 group"
+                  className="block p-6 group h-full"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/20 rounded-lg flex items-center justify-center group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30 transition-colors">
+                    <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/20 rounded-lg flex items-center justify-center group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30 transition-colors group-hover:scale-110 duration-300">
                     <Icon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                     </div>
                   {feature.badge && (
                     <span className="badge-primary">{feature.badge}</span>
                   )}
                 </div>
-                <h3 className="text-lg font-semibold text-dark-900 dark:text-dark-50 mb-2">
+                  <h3 className="text-lg font-semibold text-dark-900 dark:text-dark-50 mb-2 tracking-tight">
                   {feature.title}
                 </h3>
-                <p className="text-sm text-dark-600 dark:text-dark-400">
+                  <p className="text-sm text-dark-600 dark:text-dark-400 leading-relaxed">
                   {feature.description}
                 </p>
               </Link>
+              </SpotlightCard>
             );
           })}
         </div>
       </section>
 
       {/* Highlights */}
-      <section className="content-wrapper py-16">
-        <div className="card p-8">
-          <h2 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-8 text-center">
+      <section className="content-wrapper py-16 relative">
+        <SpotlightCard className="rounded-xl border border-dark-200 dark:border-dark-800 bg-white dark:bg-dark-900 shadow-sm">
+          <div className="p-8">
+            <h2 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-8 text-center tracking-tight">
             {language === 'zh' ? '为什么选择创想引擎' : 'Why Choose Imagine Engine'}
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
@@ -532,13 +739,13 @@ export default function HomePage() {
               const Icon = highlight.icon;
               return (
                 <div key={idx} className="text-center">
-                  <div className="inline-flex w-16 h-16 bg-primary-50 dark:bg-primary-900/20 rounded-2xl items-center justify-center mb-4">
+                    <div className="inline-flex w-16 h-16 bg-primary-50 dark:bg-primary-900/20 rounded-2xl items-center justify-center mb-4 transition-transform hover:scale-110 duration-300">
                     <Icon className="w-8 h-8 text-primary-600 dark:text-primary-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-dark-900 dark:text-dark-50 mb-2">
+                    <h3 className="text-lg font-semibold text-dark-900 dark:text-dark-50 mb-2 tracking-tight">
                     {highlight.title}
                   </h3>
-                  <p className="text-dark-600 dark:text-dark-400">
+                    <p className="text-dark-600 dark:text-dark-400 leading-relaxed">
                     {highlight.description}
                   </p>
                 </div>
@@ -546,32 +753,38 @@ export default function HomePage() {
             })}
           </div>
         </div>
+        </SpotlightCard>
       </section>
 
       {/* Pricing Preview - 简洁专业版 */}
       <section className="content-wrapper py-20 bg-dark-50 dark:bg-dark-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-dark-900 dark:text-dark-50 mb-4">
+            <h2 className="text-4xl font-bold text-dark-900 dark:text-dark-50 mb-4 tracking-tight">
               {t.pricing.title}
             </h2>
-            <p className="text-lg text-dark-600 dark:text-dark-400 mb-6">
+            {t.pricing.subtitle && (
+              <p className="text-lg text-dark-600 dark:text-dark-400 mb-6 tracking-normal">
               {t.pricing.subtitle}
             </p>
+            )}
             {/* 推荐基础版提示 */}
             <div className="flex justify-center mb-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800">
-                <span className="text-lg text-primary-700 dark:text-primary-400 font-semibold">
-                  {language === 'zh' ? '💡 90%的用户选择基础版 - 性价比最高' : '💡 90% choose Basic - Best Value'}
-                </span>
-              </div>
+              <SpotlightCard className="inline-block rounded-full border border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 backdrop-blur-sm">
+                <div className="inline-flex items-center gap-2 px-4 py-2">
+                  <span className="text-lg text-primary-700 dark:text-primary-400 font-semibold tracking-tight">
+                    {language === 'zh' ? '💡 90%的用户选择基础版 - 性价比最高' : '💡 90% choose Basic - Best Value'}
+                  </span>
+                </div>
+              </SpotlightCard>
             </div>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8 items-stretch">
             {/* Free */}
-            <div className="card p-8 bg-white dark:bg-dark-900 border-2 border-dark-200 dark:border-dark-800 rounded-2xl hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-xl hover:transform hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
-              <h3 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-2">
+            <SpotlightCard className="rounded-2xl border-2 border-dark-200 dark:border-dark-800 bg-white dark:bg-dark-900 hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-xl hover:transform hover:-translate-y-1 transition-all duration-300">
+              <div className="p-8 flex flex-col h-full">
+              <h3 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-2 tracking-tight">
                 {t.pricing.free.name}
               </h3>
               <div className="mb-6">
@@ -587,18 +800,29 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/create" className="block w-full btn-outline text-center mt-auto">
+                <Link href="/create" className="block w-full btn-primary text-center mt-auto group relative overflow-hidden hover:shadow-xl hover:shadow-primary-500/30 hover:-translate-y-1 transition-all duration-300">
+                  <span className="relative z-10 flex items-center justify-center tracking-tight">
                 {t.pricing.free.cta}
+                    <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                  </span>
+                  {/* 按钮光晕 */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl -z-10" />
               </Link>
             </div>
+            </SpotlightCard>
             
             {/* Basic - 基础版（主推） */}
-            <div className="card p-8 border-4 border-primary-500 shadow-xl relative bg-gradient-to-br from-white to-primary-50/20 dark:from-dark-900 dark:to-primary-900/10 rounded-2xl flex flex-col h-full hover:shadow-2xl hover:transform hover:-translate-y-2 hover:border-primary-600 transition-all duration-300">
-              {/* 最受欢迎徽章 */}
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-primary-600 text-white text-xs font-semibold rounded-full shadow-md ring-1 ring-white/20 dark:ring-dark-900/30">
+            <div className="relative">
+              {/* 最受欢迎徽章 - 移到外面避免被 SpotlightCard 的 overflow-hidden 裁剪 */}
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10 px-5 py-1.5 bg-primary-600 text-white text-xs font-semibold rounded-full shadow-md ring-1 ring-white/20 dark:ring-dark-900/30">
                 {language === 'zh' ? '最受欢迎' : 'Most Popular'}
               </div>
-              <h3 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-2 mt-2">
+              <SpotlightCard 
+                spotlightColor="rgba(20, 184, 166, 0.15)"
+                className="rounded-2xl border-4 border-primary-500 shadow-xl bg-gradient-to-br from-white to-primary-50/20 dark:from-dark-900 dark:to-primary-900/10 flex flex-col h-full hover:shadow-2xl hover:transform hover:-translate-y-2 hover:border-primary-600 transition-all duration-300"
+              >
+                <div className="p-8 flex flex-col h-full">
+                <h3 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-2 tracking-tight">
                 {language === 'zh' ? '基础版' : 'Basic'}
               </h3>
               <div className="mb-6">
@@ -625,14 +849,22 @@ export default function HomePage() {
                   {language === 'zh' ? '社区论坛' : 'Community forum'}
                 </li>
               </ul>
-              <Link href="/pricing" className="block w-full btn-primary text-center mt-auto">
+                  <Link href="/pricing" className="block w-full btn-primary text-center mt-auto group relative overflow-hidden hover:shadow-xl hover:shadow-primary-500/30 hover:-translate-y-1 transition-all duration-300">
+                    <span className="relative z-10 flex items-center justify-center tracking-tight">
                 {language === 'zh' ? '立即订阅' : 'Subscribe Now'}
+                      <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                    </span>
+                    {/* 按钮光晕 */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl -z-10" />
               </Link>
             </div>
+              </SpotlightCard>
+              </div>
 
             {/* Pro */}
-            <div className="card p-8 bg-white dark:bg-dark-900 border-2 border-dark-200 dark:border-dark-800 rounded-2xl hover:shadow-xl hover:transform hover:-translate-y-1 hover:border-primary-300 dark:hover:border-primary-700 transition-all duration-300 flex flex-col h-full">
-              <h3 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-2">
+            <SpotlightCard className="rounded-2xl border-2 border-dark-200 dark:border-dark-800 bg-white dark:bg-dark-900 hover:shadow-xl hover:transform hover:-translate-y-1 hover:border-primary-300 dark:hover:border-primary-700 transition-all duration-300">
+              <div className="p-8 flex flex-col h-full">
+              <h3 className="text-2xl font-bold text-dark-900 dark:text-dark-50 mb-2 tracking-tight">
                 {t.pricing.pro.name}
               </h3>
               <div className="mb-6">
@@ -649,10 +881,16 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/pricing" className="block w-full btn-outline text-center mt-auto">
+              <Link href="/pricing" className="block w-full btn-primary text-center mt-auto group relative overflow-hidden hover:shadow-xl hover:shadow-primary-500/30 hover:-translate-y-1 transition-all duration-300">
+                <span className="relative z-10 flex items-center justify-center tracking-tight">
                 {t.pricing.pro.cta}
+                  <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                </span>
+                {/* 按钮光晕 */}
+                <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl -z-10" />
               </Link>
             </div>
+            </SpotlightCard>
           </div>
 
           {/* 查看完整定价链接 */}
@@ -665,13 +903,119 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* 用户评价区 - 滚动轮播 */}
+      <section className="py-24 relative overflow-hidden">
+        <div className="content-wrapper relative z-10">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-dark-900 dark:text-dark-50 mb-4 tracking-tight">
+              {language === 'zh' ? '用户真实评价' : 'What Our Users Say'}
+            </h2>
+            <p className="text-lg text-dark-600 dark:text-dark-400 max-w-2xl mx-auto leading-relaxed">
+              {language === 'zh' 
+                ? '已有 10,000+ 用户选择 Imagine Engine，看看他们怎么说' 
+                : 'Join 10,000+ users who trust Imagine Engine'}
+            </p>
+          </div>
+
+          <TestimonialCarousel
+            testimonials={[
+              {
+                quote: "之前一直用PS处理图片，太耗时了。用了Imagine Engine的Basic版，去背景、证件照生成这些功能真的太好用了，5秒就能搞定，效率提升了好几倍。200张额度对我来说完全够用，性价比真的很高。",
+                author: "张明",
+                role: "自媒体运营",
+                plan: "Basic用户",
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=zhangming&backgroundColor=b6e3ff,c0aede,d1d4f9,ffd5dc,ffdfbf`,
+                rating: 5,
+                date: language === 'zh' ? '2周前' : '2 weeks ago'
+              },
+              {
+                quote: "我是做电商的，每天需要处理大量产品图。Imagine Engine的去背景功能比PS还好用，发丝细节都能保留得很好。关键是速度快，批量处理也不卡顿。Basic版200张额度，我一个月用不完，很划算。",
+                author: "李雅",
+                role: "电商店主",
+                plan: "Basic用户",
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=liya&backgroundColor=b6e3ff,c0aede,d1d4f9,ffd5dc,ffdfbf`,
+                rating: 5,
+                date: language === 'zh' ? '1个月前' : '1 month ago'
+              },
+              {
+                quote: "作为设计专业的学生，经常需要做作业和项目。试用了免费版后，发现工具真的很实用，特别是科研绘图功能，能快速生成符合学术规范的配图。订阅Basic版后，200张额度够我用一个学期了，比买素材网站会员还便宜。",
+                author: "王浩",
+                role: "设计专业学生",
+                plan: "Basic用户",
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=wanghao&backgroundColor=b6e3ff,c0aede,d1d4f9,ffd5dc,ffdfbf`,
+                rating: 5,
+                date: language === 'zh' ? '3周前' : '3 weeks ago'
+              },
+              {
+                quote: "写论文时经常需要配图，以前都是手绘或者找素材，很麻烦。用了Imagine Engine的科研绘图功能，输入描述就能生成专业的学术配图，大大节省了时间。Basic版的价格对学生很友好，推荐给需要的同学。",
+                author: "刘教授",
+                role: "科研工作者",
+                plan: "Basic用户",
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=liujiaoshou&backgroundColor=b6e3ff,c0aede,d1d4f9,ffd5dc,ffdfbf`,
+                rating: 5,
+                date: language === 'zh' ? '1个月前' : '1 month ago'
+              },
+              {
+                quote: "公司需要批量处理员工证件照，以前都是外包给照相馆，成本高还慢。现在用Imagine Engine，HR部门自己就能搞定，证件照生成功能很智能，自动裁剪和背景替换都很准确。Basic版完全满足我们小公司的需求。",
+                author: "陈静",
+                role: "HR专员",
+                plan: "Basic用户",
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=chenjing&backgroundColor=b6e3ff,c0aede,d1d4f9,ffd5dc,ffdfbf`,
+                rating: 5,
+                date: language === 'zh' ? '2周前' : '2 weeks ago'
+              },
+              {
+                quote: "我是做短视频的，经常需要处理封面图。Imagine Engine的风格转换和画质增强功能太实用了，能让普通的照片瞬间变得有质感。Basic版200张额度，我一个月大概用150张左右，完全够用，性价比很高。",
+                author: "赵磊",
+                role: "短视频创作者",
+                plan: "Basic用户",
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=zhaolei&backgroundColor=b6e3ff,c0aede,d1d4f9,ffd5dc,ffdfbf`,
+                rating: 5,
+                date: language === 'zh' ? '1周前' : '1 week ago'
+              }
+            ]}
+            language={language}
+          />
+        </div>
+      </section>
+
         {/* Footer */}
       <footer className="relative mt-32 bg-gradient-to-b from-dark-50 to-white dark:from-dark-950 dark:to-dark-900 overflow-hidden">
-        {/* 装饰性背景 */}
-        <div className="absolute inset-0 opacity-5 dark:opacity-10">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary-500 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary-600 rounded-full blur-3xl" />
+        {/* 装饰性背景 - 超柔和边界，使用多层渐变遮罩 */}
+        <div className="absolute inset-0 opacity-5 dark:opacity-10 overflow-hidden">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary-500 rounded-full"
+               style={{
+                 filter: 'blur(120px)',
+                 maskImage: 'radial-gradient(ellipse 100% 100% at center, black 20%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.3) 60%, transparent 80%)',
+                 WebkitMaskImage: 'radial-gradient(ellipse 100% 100% at center, black 20%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.3) 60%, transparent 80%)',
+                 transform: 'scale(1.2)'
+               }} />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary-600 rounded-full"
+               style={{
+                 filter: 'blur(120px)',
+                 maskImage: 'radial-gradient(ellipse 100% 100% at center, black 20%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.3) 60%, transparent 80%)',
+                 WebkitMaskImage: 'radial-gradient(ellipse 100% 100% at center, black 20%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.3) 60%, transparent 80%)',
+                 transform: 'scale(1.2)'
+               }} />
         </div>
+
+        {/* 左右渐变遮罩 - 柔和边界，更宽的渐变区域 */}
+        <div className="absolute inset-y-0 left-0 w-48 pointer-events-none z-10 dark:hidden"
+             style={{
+               background: 'linear-gradient(to right, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.8) 20%, rgba(255, 255, 255, 0.4) 50%, transparent 100%)'
+             }} />
+        <div className="absolute inset-y-0 right-0 w-48 pointer-events-none z-10 dark:hidden"
+             style={{
+               background: 'linear-gradient(to left, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.8) 20%, rgba(255, 255, 255, 0.4) 50%, transparent 100%)'
+             }} />
+        <div className="absolute inset-y-0 left-0 w-48 pointer-events-none z-10 hidden dark:block"
+             style={{
+               background: 'linear-gradient(to right, rgb(17, 24, 39) 0%, rgba(17, 24, 39, 0.8) 20%, rgba(17, 24, 39, 0.4) 50%, transparent 100%)'
+             }} />
+        <div className="absolute inset-y-0 right-0 w-48 pointer-events-none z-10 hidden dark:block"
+             style={{
+               background: 'linear-gradient(to left, rgb(17, 24, 39) 0%, rgba(17, 24, 39, 0.8) 20%, rgba(17, 24, 39, 0.4) 50%, transparent 100%)'
+             }} />
 
         <div className="content-wrapper relative z-10">
           {/* 主内容区 */}
@@ -684,11 +1028,11 @@ export default function HomePage() {
                     <Sparkles className="w-6 h-6 text-white" />
                   </div>
                   <span className="text-2xl font-bold text-dark-900 dark:text-dark-50">
-                    {language === 'zh' ? '创想引擎' : 'Imagine Engine'}
-                  </span>
+                  {language === 'zh' ? '创想引擎' : 'Imagine Engine'}
+                </span>
                 </div>
                 <p className="text-base text-dark-600 dark:text-dark-400 mb-6 leading-relaxed">
-                  {language === 'zh' 
+                {language === 'zh' 
                     ? '专业的 AI 图像创作平台，为开发者和创意工作者提供强大的工具和灵活的 API。' 
                     : 'Professional AI image creation platform with powerful tools and flexible APIs for developers and creators.'}
                 </p>
@@ -709,8 +1053,8 @@ export default function HomePage() {
               {/* 产品 */}
               <div>
                 <h4 className="text-xs font-bold text-dark-900 dark:text-dark-50 mb-4 uppercase tracking-wider">
-                  {t.footer.product}
-                </h4>
+                {t.footer.product}
+              </h4>
                 <ul className="space-y-3 text-sm">
                   <li>
                     <Link href="/create" className="text-dark-600 dark:text-dark-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors inline-flex items-center gap-2 group">
@@ -742,8 +1086,8 @@ export default function HomePage() {
               {/* 资源 */}
               <div>
                 <h4 className="text-xs font-bold text-dark-900 dark:text-dark-50 mb-4 uppercase tracking-wider">
-                  {t.footer.resources}
-                </h4>
+                {t.footer.resources}
+              </h4>
                 <ul className="space-y-3 text-sm">
                   <li>
                     <Link href="/docs" className="text-dark-600 dark:text-dark-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors inline-flex items-center gap-2 group">
@@ -770,13 +1114,13 @@ export default function HomePage() {
                     </Link>
                   </li>
                 </ul>
-              </div>
+            </div>
             
               {/* 公司 */}
-              <div>
+            <div>
                 <h4 className="text-xs font-bold text-dark-900 dark:text-dark-50 mb-4 uppercase tracking-wider">
-                  {t.footer.company}
-                </h4>
+                {t.footer.company}
+              </h4>
                 <ul className="space-y-3 text-sm">
                   <li>
                     <Link href="/settings" className="text-dark-600 dark:text-dark-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors inline-flex items-center gap-2 group">
@@ -790,7 +1134,7 @@ export default function HomePage() {
                       <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                     </Link>
                   </li>
-                </ul>
+              </ul>
               </div>
             </div>
           </div>
@@ -802,24 +1146,39 @@ export default function HomePage() {
               © 2025 {language === 'zh' ? '创想引擎' : 'Imagine Engine'}. {t.footer.copyright}.
             </div>
             
-            {/* 联系邮箱 - 卡片式 */}
-            <button 
-              onClick={copyEmail}
+            {/* 联系邮箱 - 卡片式，选中时才显示邮箱和提示 */}
+              <button 
+                onClick={copyEmail}
+              onMouseEnter={() => setIsEmailHovered(true)}
+              onMouseLeave={() => setIsEmailHovered(false)}
+              onFocus={() => setIsEmailHovered(true)}
+              onBlur={() => setIsEmailHovered(false)}
               className="group flex items-center gap-3 px-5 py-2.5 rounded-xl bg-dark-100/50 dark:bg-dark-800/50 hover:bg-primary-50 dark:hover:bg-primary-900/20 border border-dark-200 dark:border-dark-700 hover:border-primary-300 dark:hover:border-primary-700 transition-all duration-300"
+              title={t.footer.emailCopyHint}
             >
               <Mail className="w-4 h-4 text-dark-600 dark:text-dark-400 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors" />
-              <span className="text-sm font-medium text-dark-700 dark:text-dark-300 group-hover:text-primary-700 dark:group-hover:text-primary-300">
-                send@2art.fun
-              </span>
-              {emailCopied && (
+              {isEmailHovered && (
+                <div className="flex flex-col items-start gap-0.5">
+                  <span className="text-sm font-semibold text-dark-700 dark:text-dark-300 group-hover:text-primary-700 dark:group-hover:text-primary-300 transition-all duration-300">
+                    feedback@2art.fun
+                  </span>
+                  <span className="text-xs text-dark-500 dark:text-dark-500 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-all duration-300">
+                    {t.footer.emailHint}
+                  </span>
+                  <span className="text-xs text-primary-600 dark:text-primary-400 font-medium mt-0.5">
+                    {t.footer.emailCopyHint}
+                  </span>
+                </div>
+              )}
+                {emailCopied && (
                 <span className="text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 px-2 py-0.5 rounded-full animate-fade-in">
                   {language === 'zh' ? '✓ 已复制' : '✓ Copied'}
-                </span>
-              )}
-            </button>
+                  </span>
+                )}
+              </button>
           </div>
-        </div>
-      </footer>
+          </div>
+        </footer>
     </div>
   );
 }
