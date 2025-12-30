@@ -1,0 +1,677 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   Tech Minimal 设计系统 v3.0
+   面向技术尝鲜者的专业设计
+   ======================================== */
+
+@layer base {
+  /* 导入字体 */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * {
+    @apply border-dark-200 dark:border-dark-800;
+  }
+  
+  html {
+    @apply antialiased scroll-smooth;
+  }
+  
+  body {
+    @apply bg-white dark:bg-dark-950 text-dark-900 dark:text-dark-50 font-sans transition-colors duration-300;
+  }
+  
+  /* 自定义滚动条 */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-100 dark:bg-dark-900;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-dark-300 dark:bg-dark-700 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-dark-400 dark:bg-dark-600;
+  }
+}
+
+@layer components {
+  /* ========================================
+     按钮系统（深色/浅色完美适配）
+     ======================================== */
+  
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-button font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-dark-950 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Primary Button - 青绿色，深浅模式统一 */
+  .btn-primary {
+    @apply btn 
+           bg-primary-500 hover:bg-primary-600 active:bg-primary-700 
+           text-white 
+           focus:ring-primary-400 
+           shadow-sm hover:shadow-md;
+  }
+
+  /* Secondary Button - 描边，深浅适配 */
+  .btn-secondary {
+    @apply btn 
+           bg-white dark:bg-dark-900 
+           border border-dark-300 dark:border-dark-700 
+           text-dark-700 dark:text-dark-300 
+           hover:bg-dark-50 dark:hover:bg-dark-800 
+           active:bg-dark-100 dark:active:bg-dark-700 
+           focus:ring-dark-400;
+  }
+
+  /* Danger Button - 琥珀色警告 */
+  .btn-danger {
+    @apply btn 
+           bg-accent-500 hover:bg-accent-600 active:bg-accent-700 
+           text-white 
+           focus:ring-accent-400 
+           shadow-sm hover:shadow-md;
+  }
+
+  /* Ghost Button - 透明 */
+  .btn-ghost {
+    @apply btn 
+           bg-transparent 
+           text-dark-600 dark:text-dark-400 
+           hover:bg-dark-100 dark:hover:bg-dark-900 
+           active:bg-dark-200 dark:active:bg-dark-800 
+           focus:ring-dark-400;
+  }
+
+  /* ========================================
+     卡片系统
+     ======================================== */
+  
+  .card {
+    @apply bg-white dark:bg-dark-900 
+           border border-dark-200 dark:border-dark-800 
+           rounded-card 
+           shadow-sm 
+           transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply card 
+           hover:shadow-md 
+           hover:border-primary-300 dark:hover:border-primary-700 
+           cursor-pointer;
+  }
+
+  .card-elevated {
+    @apply card shadow-md;
+  }
+
+  /* ========================================
+     输入框系统
+     ======================================== */
+  
+  .input {
+    @apply block w-full px-3 py-2.5 
+           bg-white dark:bg-dark-900 
+           border border-dark-300 dark:border-dark-700 
+           rounded-button 
+           text-dark-900 dark:text-dark-100 
+           placeholder-dark-400 dark:placeholder-dark-600 
+           focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent 
+           transition-all duration-200;
+  }
+
+  .textarea {
+    @apply input resize-none;
+  }
+
+  .select {
+    @apply input pr-10 cursor-pointer;
+    /* 美化下拉列表样式 */
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem 1rem;
+    padding-right: 2.75rem;
+    transition: all 0.2s ease-in-out;
+    font-weight: 500;
+  }
+
+  .select:hover {
+    @apply border-primary-400 dark:border-primary-600;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+  }
+
+  .select:focus {
+    @apply border-primary-500 dark:border-primary-500;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(0);
+  }
+
+  .select:active {
+    transform: translateY(0);
+  }
+
+  .dark .select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  }
+
+  .dark .select:hover {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2334d399' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.15), 0 1px 3px rgba(0, 0, 0, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .dark .select:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2334d399' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2), 0 2px 4px rgba(0, 0, 0, 0.4);
+    transform: translateY(0);
+  }
+
+  /* 美化下拉选项样式 - 尽可能优化原生选项 */
+  .select option {
+    @apply bg-white dark:bg-dark-900 text-dark-900 dark:text-dark-100;
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  /* 选中状态的选项 */
+  .select option:checked,
+  .select option[selected] {
+    @apply bg-primary-500 text-white;
+    @apply dark:bg-primary-600 dark:text-white;
+    font-weight: 600;
+  }
+
+  /* ========================================
+     导航系统
+     ======================================== */
+  
+  .nav-link {
+    @apply flex items-center gap-2 px-3 py-2 
+           rounded-button 
+           text-dark-600 dark:text-dark-400 
+           hover:bg-dark-100 dark:hover:bg-dark-900 
+           hover:text-dark-900 dark:hover:text-dark-100 
+           transition-colors duration-200;
+  }
+
+  .nav-link-active {
+    @apply nav-link 
+           bg-primary-50 dark:bg-primary-900/20 
+           text-primary-600 dark:text-primary-400 
+           font-medium;
+  }
+
+  /* ========================================
+     工具栏按钮
+     ======================================== */
+  
+  .toolbar-btn {
+    @apply p-2.5 
+           rounded-button 
+           text-dark-600 dark:text-dark-400 
+           hover:bg-dark-100 dark:hover:bg-dark-900 
+           hover:text-dark-900 dark:hover:text-dark-100 
+           transition-colors duration-200;
+  }
+
+  .toolbar-btn-active {
+    @apply toolbar-btn 
+           bg-primary-50 dark:bg-primary-900/20 
+           text-primary-600 dark:text-primary-400 
+           font-medium;
+  }
+
+  /* ========================================
+     Badge 系统
+     ======================================== */
+  
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply badge 
+           bg-primary-100 dark:bg-primary-900/30 
+           text-primary-700 dark:text-primary-300;
+  }
+
+  .badge-accent {
+    @apply badge 
+           bg-accent-100 dark:bg-accent-900/30 
+           text-accent-700 dark:text-accent-300;
+  }
+
+  .badge-neutral {
+    @apply badge 
+           bg-dark-100 dark:bg-dark-800 
+           text-dark-700 dark:text-dark-300;
+  }
+
+  .badge-success {
+    @apply badge 
+           bg-green-100 dark:bg-green-900/30 
+           text-green-700 dark:text-green-300;
+  }
+
+  .badge-error {
+    @apply badge 
+           bg-red-100 dark:bg-red-900/30 
+           text-red-700 dark:text-red-300;
+  }
+
+  /* ========================================
+     分隔线
+     ======================================== */
+  
+  .divider {
+    @apply border-t border-dark-200 dark:border-dark-800;
+  }
+
+  /* ========================================
+     页面容器
+     ======================================== */
+  
+  .page-container {
+    @apply min-h-screen 
+           bg-white dark:bg-dark-950 
+           transition-colors duration-300;
+  }
+
+  .content-wrapper {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
+    position: relative;
+  }
+
+  /* ========================================
+     加载状态
+     ======================================== */
+  
+  .loading-spinner {
+    @apply inline-block w-5 h-5 
+           border-2 border-dark-300 dark:border-dark-700 
+           border-t-primary-400 
+           rounded-full animate-spin;
+  }
+
+  .loading-pulse {
+    @apply animate-pulse 
+           bg-dark-100 dark:bg-dark-900 
+           rounded-card;
+  }
+
+  /* ========================================
+     网格和列表布局
+     ======================================== */
+  
+  .grid-gallery {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+  }
+
+  .grid-features {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+  }
+
+  /* ========================================
+     兼容旧样式（过渡期）
+     ======================================== */
+  
+  /* 将旧的 glass-card 映射到新的 card */
+  .glass-card {
+    @apply card;
+  }
+
+  /* 将旧的 btn-gradient 映射到新的 btn-primary */
+  .btn-gradient {
+    @apply btn-primary;
+  }
+
+  /* 将旧的紫色系统映射到青绿色 */
+  .text-purple-500,
+  .text-purple-600 {
+    @apply text-primary-500 dark:text-primary-400;
+  }
+
+  .bg-purple-500,
+  .bg-purple-600 {
+    @apply bg-primary-500;
+  }
+
+  .border-purple-500 {
+    @apply border-primary-500;
+  }
+
+  /* 将旧的粉色系统映射到琥珀色 */
+  .text-pink-500,
+  .text-pink-600 {
+    @apply text-accent-500 dark:text-accent-400;
+  }
+
+  .bg-pink-500 {
+    @apply bg-accent-500;
+  }
+
+  /* ========================================
+     进度条
+     ======================================== */
+  
+  .progress-bar {
+    @apply h-2 bg-dark-100 dark:bg-dark-900 rounded-full overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full bg-primary-400 transition-all duration-300;
+  }
+
+  /* ========================================
+     表单组样式
+     ======================================== */
+  
+  .form-group {
+    @apply space-y-2;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-dark-700 dark:text-dark-300;
+  }
+
+  .form-hint {
+    @apply text-xs text-dark-500 dark:text-dark-500;
+  }
+
+  .form-error {
+    @apply text-xs text-red-600 dark:text-red-400;
+  }
+
+  /* ========================================
+     Modal/Dialog
+     ======================================== */
+  
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50;
+  }
+
+  .modal-content {
+    @apply fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 
+           card-elevated 
+           p-6 
+           max-w-2xl w-full mx-4 
+           max-h-[90vh] overflow-y-auto 
+           z-50;
+  }
+}
+
+@layer utilities {
+  /* 文本工具类 */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* 截断文本 */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* 自定义滚动条样式 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* 消息发送动画 */
+@keyframes slide-up-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-enter {
+  animation: slide-up-fade-in 0.3s ease-out;
+}
+
+/* 渐变背景动画 */
+@keyframes gradient-shift {
+  0%, 100% { 
+    background-position: 0% 50%; 
+  }
+  50% { 
+    background-position: 100% 50%; 
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* 评论滚动动画 - 全屏无边界无缝循环 */
+@keyframes testimonial-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-33.333333%));
+  }
+}
+
+.animate-testimonial-scroll {
+  animation: testimonial-scroll 40s linear infinite;
+  will-change: transform;
+}
+
+.animate-testimonial-scroll.paused {
+  animation-play-state: paused;
+}
+
+/* 淡入动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ========================================
+   高级动画效果 - 交互媒体设计优化
+   ======================================== */
+
+/* Aurora 极光背景动画 */
+@keyframes aurora {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes aurora-reverse {
+  0% { transform: rotate(360deg) scale(1.2); }
+  50% { transform: rotate(180deg) scale(1); }
+  100% { transform: rotate(0deg) scale(1.2); }
+}
+
+.animate-aurora {
+  animation: aurora 60s linear infinite;
+}
+
+.animate-aurora-reverse {
+  animation: aurora-reverse 50s linear infinite;
+}
+
+/* Blob 动态变形动画 */
+@keyframes blob {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+.animate-blob {
+  animation: blob 10s ease-in-out infinite;
+}
+
+/* 网格移动动画 */
+@keyframes grid-move {
+  0% { transform: perspective(500px) rotateX(60deg) translateY(0) scale(2); }
+  100% { transform: perspective(500px) rotateX(60deg) translateY(40px) scale(2); }
+}
+
+.animate-grid-move {
+  animation: grid-move 20s linear infinite;
+}
+
+/* 渐变文字动画 */
+@keyframes gradient-x {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 5s ease infinite;
+}
+
+/* 淡入向上动画 */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-fade-in-up.delay-100 {
+  animation-delay: 100ms;
+}
+
+.animate-fade-in-up.delay-200 {
+  animation-delay: 200ms;
+}
+
+.animate-fade-in-up.delay-300 {
+  animation-delay: 300ms;
+}
+
+/* 边框光束动画 */
+@keyframes border-beam {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-border-beam {
+  background-size: 200% 100%;
+  animation: border-beam 3s linear infinite;
+}
+
+/* 慢速脉冲动画 */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 淡入动画（用于工具提示等） */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+/* Shimmer 闪烁效果 */
+@keyframes shimmer {
+  0% { transform: translateX(-100%) skewX(-12deg); }
+  100% { transform: translateX(200%) skewX(-12deg); }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
+}

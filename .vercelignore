@@ -1,0 +1,24 @@
+# 开发文件
+*.md
+!README.md
+
+# 文档
+DEPLOYMENT_GUIDE.md
+QUICK_DEPLOY.md
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# 测试
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# 日志
+*.log
+npm-debug.log*
+
