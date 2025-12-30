@@ -126,9 +126,7 @@ export async function chatWithAssistant(
     }
 
     const provider = modelscopeProvider;
-    // 默认使用DeepSeek-V3.1
-    const modelId = selectedModel || localStorage.getItem('ai-assistant-model') || 'deepseek-ai/DeepSeek-V3.1';
-
+    
     // 构建消息历史（仅保留最近5条）
     const recentHistory = conversationHistory.slice(-5);
     
@@ -156,36 +154,101 @@ export async function chatWithAssistant(
       'Authorization': `Bearer ${apiKey}`,
     };
 
-    const requestBody = {
-      model: modelId,
-      messages: messages,
-      max_tokens: 2000,
-      temperature: 0.7,
-      top_p: 0.8,
-    };
+    // 如果用户指定了模型，优先使用；否则尝试多个支持的模型
+    const preferredModel = selectedModel || localStorage.getItem('ai-assistant-model');
+    const modelsToTry = preferredModel 
+      ? [preferredModel] 
+      : [
+          'Qwen/Qwen2.5-72B-Instruct',  // 首选项：Qwen 2.5 系列，ModelScope 广泛支持
+          'qwen/Qwen2.5-72B-Instruct',   // 小写版本
+          'deepseek-ai/DeepSeek-V3.1',   // 备用：DeepSeek V3.1
+        ];
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(requestBody),
-    });
+    let lastError: Error | null = null;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('ModelScope API Error:', errorText);
-      throw new Error(`API调用失败: ${response.status}`);
+    for (const modelId of modelsToTry) {
+      try {
+        const requestBody = {
+          model: modelId,
+          messages: messages,
+          max_tokens: 2000,
+          temperature: 0.7,
+          top_p: 0.8,
+        };
+
+        // 添加调试日志
+        console.log(`🔍 尝试模型: ${modelId}`);
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(requestBody),
+        });
+
+        const responseText = await response.text();
+        console.log(`📊 模型 ${modelId} 响应状态: ${response.status}`);
+
+        if (!response.ok) {
+          let errorMessage = `API调用失败: ${response.status}`;
+          try {
+            const errorJson = JSON.parse(responseText);
+            if (errorJson.errors?.message) {
+              errorMessage = errorJson.errors.message;
+            } else if (errorJson.error?.message) {
+              errorMessage = errorJson.error.message;
+            }
+            
+            // 如果模型不支持，尝试下一个
+            if (errorMessage.includes('has no provider supported')) {
+              console.log(`⚠️ 模型 ${modelId} 不支持，尝试下一个...`);
+              lastError = new Error(errorMessage);
+              continue; // 尝试下一个模型
+            }
+          } catch {
+            // 如果不是JSON，直接使用文本
+            if (responseText) {
+              errorMessage = `${errorMessage} - ${responseText.substring(0, 200)}`;
+            }
+          }
+          
+          // 记录请求详情用于调试
+          console.error('ModelScope API Request Details:', {
+            url,
+            model: modelId,
+            hasApiKey: !!apiKey,
+            apiKeyPrefix: apiKey ? `${apiKey.substring(0, 10)}...` : 'none',
+            errorMessage,
+          });
+          
+          // 如果不是"不支持"错误，直接抛出
+          throw new Error(errorMessage);
+        }
+
+        const data = JSON.parse(responseText);
+        
+        // 提取回复内容
+        const content = data.choices?.[0]?.message?.content || '';
+
+        if (!content) {
+          throw new Error('No response content');
+        }
+
+        console.log(`✅ 模型 ${modelId} 调用成功`);
+        return content;
+
+      } catch (error: any) {
+        // 如果是"不支持"错误，继续尝试下一个模型
+        if (error.message?.includes('has no provider supported')) {
+          lastError = error;
+          continue;
+        }
+        // 其他错误直接抛出
+        throw error;
+      }
     }
 
-    const data = await response.json();
-    
-    // 提取回复内容
-    const content = data.choices?.[0]?.message?.content || '';
-
-    if (!content) {
-      throw new Error('No response content');
-    }
-
-    return content;
+    // 所有模型都失败了
+    throw lastError || new Error('所有尝试的模型都不支持。请检查 ModelScope API 支持情况或联系技术支持。');
 
   } catch (error: any) {
     console.error('AI Assistant error:', error);
@@ -220,4 +283,3 @@ export async function generateVariants(basePrompt: string, count: number = 3): P
   
   return chatWithAssistant(message, []);
 }
-
