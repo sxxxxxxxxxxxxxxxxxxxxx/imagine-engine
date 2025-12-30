@@ -195,6 +195,26 @@ export const PRESET_PROVIDERS: APIProvider[] = [
     icon: '🔮',
     models: [
       {
+        id: 'Qwen/Qwen2.5-72B-Instruct',
+        name: 'Qwen 2.5 72B Instruct',
+        nameZh: 'Qwen 2.5 72B 指令模型',
+        type: 'chat',
+        maxTokens: 128000,
+        description: 'Qwen 2.5 72B model, widely supported on ModelScope',
+        descriptionZh: 'Qwen 2.5 72B 模型，ModelScope 广泛支持',
+        costPer1k: 0,
+      },
+      {
+        id: 'qwen/Qwen2.5-72B-Instruct',
+        name: 'Qwen 2.5 72B (lowercase)',
+        nameZh: 'Qwen 2.5 72B（小写）',
+        type: 'chat',
+        maxTokens: 128000,
+        description: 'Qwen 2.5 72B model (lowercase variant)',
+        descriptionZh: 'Qwen 2.5 72B 模型（小写变体）',
+        costPer1k: 0,
+      },
+      {
         id: 'deepseek-ai/DeepSeek-V3.1',
         name: 'DeepSeek V3.1',
         nameZh: 'DeepSeek V3.1',
@@ -465,4 +485,3 @@ export class ProviderManager {
 export const DEFAULT_PROVIDER = PRESET_PROVIDERS[0]; // pockgo-image
 export const DEFAULT_IMAGE_PROVIDER = PRESET_PROVIDERS[0]; // pockgo-image
 export const DEFAULT_CHAT_PROVIDER = PRESET_PROVIDERS.find(p => p.id === 'modelscope') || PRESET_PROVIDERS[1]; // modelscope
-
