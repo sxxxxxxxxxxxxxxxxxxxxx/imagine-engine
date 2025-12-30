@@ -24,7 +24,7 @@ export default function ChatPanel({ onClose, onMinimize, ballPosition }: ChatPan
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('deepseek-ai/DeepSeek-V3.1');
+  const [selectedModel, setSelectedModel] = useState('Qwen/Qwen2.5-72B-Instruct');
   const [size, setSize] = useState({ width: 380, height: 600 });
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isResizing, setIsResizing] = useState(false);
@@ -579,4 +579,3 @@ export default function ChatPanel({ onClose, onMinimize, ballPosition }: ChatPan
     </div>
   );
 }
-
