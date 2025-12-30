@@ -33,10 +33,10 @@ export function initializeDefaultConfig() {
     console.log('✅ 默认模型已配置');
   }
 
-  // 设置AI助手模型
+  // 设置AI助手模型（默认使用 Qwen，ModelScope 广泛支持）
   const assistantModel = localStorage.getItem('ai-assistant-model');
   if (!assistantModel) {
-    localStorage.setItem('ai-assistant-model', 'deepseek-ai/DeepSeek-V3.1');
+    localStorage.setItem('ai-assistant-model', 'Qwen/Qwen2.5-72B-Instruct');
     console.log('✅ AI助手模型已配置');
   }
 
@@ -65,4 +65,3 @@ export function resetDefaultConfig() {
   
   console.log('🔄 配置已重置，刷新页面将重新初始化');
 }
-
