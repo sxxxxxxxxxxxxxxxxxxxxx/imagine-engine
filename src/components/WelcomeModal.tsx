@@ -114,7 +114,7 @@ export default function WelcomeModal() {
           </div>
           <div className="w-px h-8 bg-dark-200 dark:bg-dark-800"></div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">10</div>
+            <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">20</div>
             <div>{language === 'zh' ? '免费张数' : 'Free Images'}</div>
           </div>
           <div className="w-px h-8 bg-dark-200 dark:bg-dark-800"></div>
@@ -151,4 +151,3 @@ export default function WelcomeModal() {
     </div>
   );
 }
-
